@@ -1,0 +1,1 @@
+Build and test everything described in REQUIREMENTS.md and don't stop until all success criteria are met and the project is complete.

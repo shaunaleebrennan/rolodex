@@ -1,0 +1,12 @@
+{
+  "name": "rolodex",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:24",
+  "runArgs": [
+    "--env-file",
+    "${localWorkspaceFolder}/.env"
+  ],
+  "containerEnv": {
+    "AGENT_BROWSER_EXECUTABLE_PATH": "/usr/bin/chromium"
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh"
+}
