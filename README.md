@@ -4,7 +4,7 @@
 
 Rolodex helps people remember what matters about their relationships, see who is due a catch-up, and prepare a relevant message. It combines a working personal CRM with MongoDB-backed memory and an AI assistant that retrieves saved context before responding.
 
-Built by **Shauna Brennan**, with AI coding assistance, as a hands-on exploration of product design, MongoDB, and tool-using AI.
+Branched from ed-donner/rolodex, built and enriched by **Shauna Brennan**, with AI coding assistance, as a hands-on exploration of product design, MongoDB, and tool-using AI.
 
 ## See how it works
 
