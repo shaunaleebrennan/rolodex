@@ -1,3 +1,5 @@
+<img width="764" height="602" alt="Screenshot 2026-09-10 at 23 42 35" src="https://github.com/user-attachments/assets/41a12d0b-7755-425c-84aa-5ac7c0677237" />
+<img width="764" height="602" alt="Screenshot 2026-09-10 at 23 42 35" src="https://github.com/user-attachments/assets/231f6fbe-63e5-43eb-8d9a-507986183bc9" />
 # Product walkthrough
 
 Rolodex connects relationship memory with thoughtful follow-up. This short tour shows how saved context becomes discoverable and useful. All named sample contacts below are fictional.
@@ -27,11 +29,15 @@ Choose **Prepare a catch-up** on a matching person. Review the question and subm
 
 The assistant retrieves saved relationship context and helps compose a response. MongoDB supplies the records; the language model interprets that context and drafts wording. The user reviews the output and decides what to send. The assistant cannot send messages or change records.
 
+<img width="764" height="602" alt="Screenshot 2026-09-10 at 23 42 35" src="https://github.com/user-attachments/assets/080071ac-fa75-4369-ba18-421c2691e043" />
+
 ## 4. Keep the relationship history current
 
 Log the next conversation on the profile. Last-contacted dates and check-in status update from that record, helping identify when another catch-up is due.
 
 New notes become available to semantic retrieval after refreshing the search data. Retrieved excerpts are checked against current source records so edited or deleted evidence is not presented as current.
+<img width="610" height="416" alt="Screenshot 2026-09-10 at 23 43 46" src="https://github.com/user-attachments/assets/813daecc-778c-462f-9deb-e3cd688ed93f" />
+
 
 ## Other examples to explore
 
