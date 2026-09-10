@@ -64,7 +64,7 @@ The AI assistant uses the OpenAI Responses API and three read-only tools:
 - `search_people`: search MongoDB’s text index for relevant names, companies, tags, and notes.
 - `get_relationship_context`: retrieve recent conversations, facts, life updates, and upcoming dates.
 
-Each AI request requires an in-app checkbox explaining that the question and relevant saved names/notes/history are shared with OpenAI. Email addresses, phone numbers and photos are excluded from retrieved context. `store:false` is sent to the Responses API; this is not a blanket guarantee of zero provider retention. Use fictional contacts when sharing a demonstration. Each prompt is independent; assistant chat history is not persisted.
+Enable AI features once after reviewing what is shared with OpenAI. The choice is saved in this browser for this app address and applies to searches and catch-ups. Use **AI enabled · Manage** to turn sharing off; clearing browser storage or changing ports requires enabling again. Email addresses, phone numbers and photos are excluded from retrieved context. `store:false` is sent to the Responses API; this is not a blanket guarantee of zero provider retention. Use fictional contacts when sharing a demonstration. Each prompt is independent; assistant chat history is not persisted.
 
 The assistant shows the records it consulted and its tool steps. It cannot send messages or change records. Follow-up reminders are created through a separate form you review and save. API usage is billed by your provider. The app never exposes the API key to the browser.
 

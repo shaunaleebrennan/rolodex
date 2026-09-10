@@ -35,7 +35,7 @@ Find people from a description of something they discussed, even when you cannot
    }
    ```
 
-5. Stop the existing server with Ctrl+C and run `npm start`. Open the assistant, choose **Find by memory**, describe what you remember, allow query sharing, and search. Review the excerpts, then choose **Prepare a catch-up**. Review the new question and consent before sending it.
+5. Stop the existing server with Ctrl+C and run `npm start`. Open the assistant, choose **Find by memory**, describe what you remember, enable AI features once, and search. Review the excerpts, then choose **Prepare a catch-up**. Review the new question before sending it. Your sharing choice is remembered across searches and catch-ups; use **AI enabled · Manage** to turn it off. Clearing browser storage or changing the app address/port requires enabling it again.
 
 Rerun `search:prepare` after adding, editing, or deleting notes. It skips unchanged excerpts and removes obsolete ones. This prototype does not continuously send updates for embedding. Changed/deleted excerpts are filtered against current records at query time, even before reindexing. Old derived entries remain in the collection until preparation runs again. For an empty collection there are no matches; add notes first.
 

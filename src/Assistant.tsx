@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Sparkles,
   ArrowUp,
@@ -14,6 +14,14 @@ import type { MemoryMatch } from "../server/semantic";
 import { askAssistant, findMemory } from "./api";
 import { Modal, Avatar } from "./ui";
 import type { Editor } from "./Records";
+const consentKey = "rolodex.ai-sharing.v1";
+function rememberedConsent() {
+  try {
+    return localStorage.getItem(consentKey) === "enabled";
+  } catch {
+    return false;
+  }
+}
 export default function Assistant({
   data,
   personId,
@@ -41,11 +49,33 @@ export default function Assistant({
     [result, setResult] = useState<AssistantResult | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [consent, setConsent] = useState(false),
+    [consent, setConsent] = useState(rememberedConsent),
     [draft, setDraft] = useState(""),
     [copied, setCopied] = useState(false);
+  const [manageSharing, setManageSharing] = useState(false);
+  const [storageNotice, setStorageNotice] = useState("");
+  useEffect(() => {
+    const sync = (event: StorageEvent) => {
+      if (event.key === consentKey || event.key === null)
+        setConsent(rememberedConsent());
+    };
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+  function changeSharing(enabled: boolean) {
+    setConsent(enabled);
+    setManageSharing(false);
+    setStorageNotice("");
+    try {
+      localStorage.setItem(consentKey, enabled ? "enabled" : "disabled");
+    } catch {
+      setStorageNotice(
+        "Your browser couldn’t save this choice. It applies while this assistant is open.",
+      );
+    }
+  }
   async function ask(q = question) {
-    if (!q.trim() || busy) return;
+    if (!q.trim() || busy || ((aiEnabled || memoryMode) && !consent)) return;
     setBusy(true);
     setError("");
     setResult(null);
@@ -100,7 +130,6 @@ export default function Assistant({
           disabled={busy}
           onClick={() => {
             setMemoryMode(false);
-            setConsent(false);
             setMatches(null);
             setError("");
           }}
@@ -112,7 +141,6 @@ export default function Assistant({
           disabled={busy}
           onClick={() => {
             setMemoryMode(true);
-            setConsent(false);
             setQuestion("");
             setResult(null);
             setError("");
@@ -180,17 +208,53 @@ export default function Assistant({
             <ArrowUp size={19} />
           </button>
         </label>
-        {(aiEnabled || memoryMode) && (
-          <label className="check ai-consent">
-            <input
-              type="checkbox"
-              checked={consent}
-              onChange={(e) => setConsent(e.target.checked)}
-            />
-            {memoryMode
-              ? "Share this search query with OpenAI to find similar saved memories."
-              : "Share this question and relevant saved names, notes, conversations, facts, and dates with OpenAI for this request."}
-          </label>
+        {(aiEnabled || memoryMode || consent) && (
+          <div className="ai-consent">
+            {consent ? (
+              <p>
+                AI enabled ·{" "}
+                <button
+                  type="button"
+                  className="text-button"
+                  aria-expanded={manageSharing}
+                  onClick={() => setManageSharing(!manageSharing)}
+                >
+                  Manage
+                </button>
+              </p>
+            ) : (
+              <h3>Enable AI features?</h3>
+            )}
+            {(!consent || manageSharing) && (
+              <div>
+                <p>
+                  Your questions and relevant saved names, notes, conversations,
+                  facts, and dates will be shared with OpenAI when you use AI
+                  features. Find by memory shares your search query to find
+                  matching notes.
+                </p>
+                <p>
+                  Remember this choice in this browser. You can turn sharing off
+                  here anytime.
+                </p>
+                <button
+                  type="button"
+                  className={consent ? "secondary" : "primary"}
+                  disabled={busy}
+                  onClick={() => changeSharing(!consent)}
+                >
+                  {consent ? "Turn off AI sharing" : "Enable AI features"}
+                </button>
+                {consent && busy && (
+                  <p>
+                    The current request has already been sent. You can turn off
+                    sharing when it finishes.
+                  </p>
+                )}
+              </div>
+            )}
+            {storageNotice && <p role="status">{storageNotice}</p>}
+          </div>
         )}
       </form>
       {busy && (
@@ -231,7 +295,6 @@ export default function Assistant({
                   setSelectedId(m.personId);
                   setMemoryMode(false);
                   setMatches(null);
-                  setConsent(false);
                   setQuestion(
                     `Help me prepare a catch-up with ${m.name} about: ${question}. Use saved notes, and distinguish evidence from assumptions.`,
                   );

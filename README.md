@@ -74,7 +74,7 @@ The model chooses which tools to call and can use their results in subsequent st
 
 Source cards and tool steps make the answer inspectable. They show consulted records, rather than guaranteeing that every generated sentence is correct. The assistant cannot send messages or modify records. A follow-up reminder is saved through a separate form the user reviews.
 
-Before each AI request, the user explicitly allows their question and relevant relationship context to be shared with OpenAI. Dedicated email, phone, and photo fields are excluded from retrieved context; freeform notes may still contain personal details. Keys remain server-side, and `.env` is excluded from Git.
+The user enables AI sharing once after seeing what is sent to OpenAI. The choice is remembered in this browser for this app address; **AI enabled · Manage** lets them turn it off. Dedicated email, phone, and photo fields are excluded from retrieved context; freeform notes may still contain personal details. Keys remain server-side, and `.env` is excluded from Git.
 
 ## Design choices and boundaries
 
