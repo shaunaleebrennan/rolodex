@@ -8,7 +8,7 @@ const store = new Store({
 try {
   await store.open();
   console.log(
-    `Added ${await addDemo(store)} fictional interview contacts. Existing contacts were not edited. Refresh Rolodex, then run search:prepare to index these new notes.`,
+    `Added ${await addDemo(store)} fictional interview contacts. Legacy sample-name suffixes were cleaned up; other contact details were preserved. Refresh Rolodex, then run search:prepare to index these new notes.`,
   );
 } catch {
   console.error(

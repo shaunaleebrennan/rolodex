@@ -1,66 +1,53 @@
-# Rolodex: from a half-remembered conversation to a useful catch-up
+# Product walkthrough
 
-This two-minute walkthrough shows how MongoDB supplies relationship context to an AI assistant. All six interview contacts are fictional. A recording is not included yet; the sequence below is ready to demonstrate or record locally.
+Rolodex connects relationship memory with thoughtful follow-up. This short tour shows how saved context becomes discoverable and useful. All named sample contacts below are fictional.
 
-## Prepare the interview demo
+## 1. Capture the details worth remembering
 
-Stop your server with Control+C and wait for the terminal prompt. From the updated project folder, run each command in order:
+Open **Morgan Ellis** in People. Morgan’s profile describes leaving salaried employment to establish an independent consultancy. The conversation history adds context about pricing, service packages, and finding the first clients.
 
-```sh
-git pull origin main
-npm install
-npm run build
-npm run demo:add
-npm run search:prepare -- --share-notes
-```
+Profiles bring these details together with facts, life updates, dates, and past conversations.
 
-`demo:add` adds six clearly labelled fictional contacts to your configured store. It does not replace or edit existing contacts, and skips demo contacts already present. Fresh local installations also have more varied sample stories. Existing generic sample records are intentionally left untouched.
+## 2. Find someone from a half-remembered conversation
 
-Preparation sends the configured store's eligible notes to OpenAI for embeddings, including any real notes you have added; it is not limited to the six demo contacts. See [sharing and indexing details](SEMANTIC_SEARCH.md). Wait for the Atlas index to become queryable before continuing.
+Open the assistant and choose **Find by memory**. Try:
 
-Optionally run the evaluation below, then start the app:
+> Who was thinking about starting their own business?
 
-```sh
-npm start -- --port 4174
-```
+With the demo data indexed, Morgan is an expected candidate. MongoDB Atlas Vector Search retrieves related meaning, so the query does not need to repeat the saved wording. The original excerpts appear alongside each result so you can assess its relevance.
 
-Open http://127.0.0.1:4174. Use fictional profiles only in the recording. Check that no personal notes or credentials are visible in neighbouring panels or browser tabs. The app is local; this URL is not a shareable hosted demo.
+Results depend on the indexed data and query wording. Similarity identifies candidates; it does not establish that someone has a particular qualification or experience.
 
-## Two-minute walkthrough
+## 3. Prepare a relevant catch-up
 
-| Time | Show | Say |
+Choose **Prepare a catch-up** on a matching person. Review the question and submit it with AI sharing enabled.
+
+The assistant retrieves saved relationship context and helps compose a response. MongoDB supplies the records; the language model interprets that context and drafts wording. The user reviews the output and decides what to send. The assistant cannot send messages or change records.
+
+## 4. Keep the relationship history current
+
+Log the next conversation on the profile. Last-contacted dates and check-in status update from that record, helping identify when another catch-up is due.
+
+New notes become available to semantic retrieval after refreshing the search data. Retrieved excerpts are checked against current source records so edited or deleted evidence is not presented as current.
+
+## Other examples to explore
+
+| Question | Expected sample contact | Relevant saved context |
 | --- | --- | --- |
-| 0:00–0:15 | Today, then People | “I built Rolodex because remembering someone's name is only half the problem. The useful context—what they are working on, what we discussed, and why I should reconnect—gets scattered.” |
-| 0:15–0:35 | Open **Morgan Ellis · Demo** and show their profile notes | “Here, Morgan is leaving employment to establish a consultancy. I've saved the conversation in my own words. I might remember the idea later, without remembering Morgan's name.” |
-| 0:35–1:00 | Open the assistant → Find by memory. Ask **Who was thinking about starting their own business?** | “I can search for what I remember. MongoDB Vector Search looks for related meaning in the stored notes. It can retrieve a consultancy conversation without needing the exact phrase 'starting a business'.” |
-| 1:00–1:20 | Show Morgan's matching excerpt; choose Prepare a catch-up | “The product shows the original evidence so I can check the match. I choose the person, then the assistant uses their relationship history to help me prepare.” |
-| 1:20–1:40 | Submit the catch-up question and review the generated response | “MongoDB supplies the saved context; the language model composes the answer. The assistant cannot send messages. I decide whether the suggestion is useful and what to share.” |
-| 1:40–2:00 | Return to the source excerpt or show the public README | “This is a working personal prototype. The next question is whether semantic search finds relevant people more reliably than the existing text search. I've included a small evaluation and made the limitations explicit.” |
+| Who has experience launching an AI product? | Alex Rowan | Bringing a conversational assistant from beta to commercial release. |
+| Who could help me take better headshots? | Taylor Quinn | Portrait lighting and helping people feel comfortable on camera. |
+| Who understands employee listening and retention? | Riley Shah | Workplace questionnaires, anonymous feedback, and why employees stay or leave. |
 
-Only say a result was found if the live search actually returns it. If Morgan is not among the first results, try the query during rehearsal and report the result honestly; don't describe a scripted expected result as measured performance. Index readiness, other records, and query wording affect rankings.
+These are illustrative expected matches, not published benchmark results.
 
-## Optional MongoDB close-up
+## Run and evaluate
 
-Show `people`, `interactions`, and the derived `relationship_memory` collection in Atlas. Explain that each searchable excerpt has a source identifier, a vector, and a content hash. The app checks results against current records to avoid presenting edited or deleted excerpts as evidence. Don't display your connection string or database credentials.
+Follow the [setup guide](SETUP.md) to run the app locally. Add the six fictional profiles with `npm run demo:add`, then follow the [semantic search guide](SEMANTIC_SEARCH.md) to prepare the index. Existing contacts are preserved; the command also removes the old “ · Demo” suffix from tagged sample contacts.
 
-## Record real retrieval results
+After preparation, `npm run search:evaluate -- --share-queries` runs ten fixed fictional questions and prints a results table. Nine have an expected contact; one tests an unrelated topic. It sends the questions to OpenAI for embeddings and may incur API charges.
 
-Once the six contacts and index are ready:
+The comparison uses the existing MongoDB profile text search. Semantic retrieval also covers conversations and updates, so the comparison does not isolate search algorithm quality over identical fields. This small fixture illustrates behaviour; it is not a general benchmark. No measured results are published yet.
 
-```sh
-npm run search:evaluate -- --share-queries
-```
+The app currently runs locally. This repository provides source, documentation, and sample data; a hosted demo and recorded walkthrough are not currently available.
 
-This sends ten fixed fictional queries to OpenAI for embeddings and prints a Markdown results table. It does not print real contact names or saved notes. Nine queries have an expected contact; one deliberately unrelated query tests whether the nearest matches are unsupported. You can save the report locally with:
-
-```sh
-npm run --silent search:evaluate -- --share-queries > search-evaluation.md
-```
-
-Check the command succeeded and review the file before sharing it. A failed run must not be presented as a completed evaluation. No live scores are included in this repository yet: they require your private Atlas/API setup.
-
-The comparison is with the existing MongoDB profile text search, not an optimised lexical system over identical fields. Semantic retrieval covers more fields, including conversations and life updates. The fixture is small and hand-authored, so these results illustrate behaviour, not general superiority. Review the returned evidence and catch-up wording yourself; the automated score measures expected-contact retrieval only.
-
-## Sharing
-
-Share the [project README](../README.md) with the interviewer. A recording link can be added near the top after recording and reviewing it. The repository does not contain a deployed app or completed demo video. The prototype has no authentication and must not be exposed as a public service without adding appropriate access controls and a separate fictional dataset.
+[Return to project overview](../README.md)

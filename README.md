@@ -6,11 +6,13 @@ Rolodex helps people remember what matters about their relationships, see who is
 
 Built by **Shauna Brennan**, with AI coding assistance, as a hands-on exploration of product design, MongoDB, and tool-using AI.
 
-## Try the interview demo
+## See how it works
 
-[Follow the two-minute walkthrough](docs/DEMO_WALKTHROUGH.md) with six fictional contacts and a ten-question retrieval evaluation. Add the demo contacts with `npm run demo:add`, then prepare the search index. Existing contacts are not overwritten.
+A saved note says someone is leaving employment to establish a consultancy. Months later, you remember the idea but not the person's name. **Find by memory** lets you search “Who was thinking about starting their own business?”, inspect the matching notes, and prepare a relevant catch-up.
 
-**Availability:** the source and setup guides are shareable here. The app runs locally; no hosted demo or completed video is included yet. Live evaluation scores require the author's private Atlas/API setup and are not claimed in this repository.
+[Explore the product walkthrough](docs/DEMO_WALKTHROUGH.md) or [run Rolodex locally](#run-it-locally). The sample dataset includes fictional contacts with distinct stories to explore.
+
+**Project status:** working local prototype with MongoDB persistence, semantic retrieval, and an optional AI assistant. A hosted demo is not currently available. Retrieval quality has not yet been systematically evaluated.
 
 ## The problem
 
@@ -61,9 +63,9 @@ MongoDB is the configured primary store for relationship memory. Its role extend
 
 The data model uses eight collections: `people`, `interactions`, `dates`, `facts`, `news`, `reminders`, `gifts`, and `connections`. Records use UUID identifiers and explicit references between entities.
 
-The optional **Find by memory** feature adds MongoDB Atlas Vector Search: describe an experience or topic, review matching saved excerpts, then prepare a catch-up with a selected person. For example: “Who has experience launching an AI product?” It uses an explicitly prepared embedding index and verifies retrieved excerpts against current records. [Enable semantic search and try the interview evaluation →](docs/SEMANTIC_SEARCH.md)
+The optional **Find by memory** feature adds MongoDB Atlas Vector Search: describe an experience or topic, review matching saved excerpts, then prepare a catch-up with a selected person. For example: “Who has experience launching an AI product?” It uses an explicitly prepared embedding index and verifies retrieved excerpts against current records. [Semantic search setup and evaluation →](docs/SEMANTIC_SEARCH.md)
 
-Ordinary text search and structured retrieval remain available. Live vector-search quality has not been measured in this build environment.
+Ordinary text search and structured retrieval remain available. The repository includes a reproducible retrieval evaluation; measured results are not yet published.
 
 ## How the AI assistant works
 
@@ -115,7 +117,7 @@ To enable MongoDB and AI, copy [`.env.example`](.env.example) to a private `.env
 
 ## Validation
 
-- **20 automated tests passed** during the build, covering record operations, local persistence, imports, date/cadence logic, validation, the assistant's mocked tool loop, and semantic retrieval consent, embedding validation, and source freshness. The TypeScript check and production build also passed.
+- **21 automated tests passed** during the build, covering record operations, local persistence, imports, date/cadence logic, validation, the assistant's mocked tool loop, and semantic retrieval consent, embedding validation, and source freshness. The TypeScript check and production build also passed.
 - **Browser checks** exercised contact creation and editing, search, conversation logging, status changes, calendar navigation, gifts, connections, reminder completion, CSV import with duplicate skipping, circle dragging with persisted changes, and the offline assistant.
 - **Live local setup:** the project author subsequently confirmed contact persistence in MongoDB Atlas and a successful AI assistant request using private credentials.
 - **Remaining coverage:** the full MongoDB integration suite requires a dedicated test URI and was not run during the build. vCard parsing has unit coverage; its separate browser upload check was interrupted by a file-chooser timeout. Generated-answer quality has not been systematically evaluated.

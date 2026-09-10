@@ -16,7 +16,11 @@ try {
   await store.open();
   const people = await store.list("people");
   const fixture = demoPeople.map((d) =>
-    people.find((p) => p.name === d.name && p.tags.includes(demoTag)),
+    people.find(
+      (p) =>
+        (p.name === d.name || p.name === `${d.name} · Demo`) &&
+        p.tags.includes(demoTag),
+    ),
   );
   if (fixture.some((p) => !p)) throw new Error("missing fixture");
   const rows: string[] = [];

@@ -3,7 +3,7 @@ import type { Store } from "./store.js";
 export const demoTag = "rolodex-interview-demo-v1";
 export const demoPeople = [
   {
-    name: "Alex Rowan · Demo",
+    name: "Alex Rowan",
     title: "Product marketing lead",
     company: "Lantern Labs (fictional)",
     notes:
@@ -15,7 +15,7 @@ export const demoPeople = [
     fact: "Happy to discuss positioning experiments and launch retrospectives.",
   },
   {
-    name: "Morgan Ellis · Demo",
+    name: "Morgan Ellis",
     title: "Independent adviser",
     company: "Ellis Advisory (fictional)",
     notes:
@@ -26,7 +26,7 @@ export const demoPeople = [
     fact: "Prefers practical examples of proposal templates and pricing.",
   },
   {
-    name: "Taylor Quinn · Demo",
+    name: "Taylor Quinn",
     title: "Portrait photographer",
     company: "Quinn Studio (fictional)",
     notes:
@@ -37,7 +37,7 @@ export const demoPeople = [
     fact: "Enjoys teaching people who only have a phone camera.",
   },
   {
-    name: "Jamie Park · Demo",
+    name: "Jamie Park",
     title: "Community organiser",
     company: "Harbour Collective (fictional)",
     notes:
@@ -48,7 +48,7 @@ export const demoPeople = [
     fact: "Likes introductions to local venue owners.",
   },
   {
-    name: "Riley Shah · Demo",
+    name: "Riley Shah",
     title: "People research lead",
     company: "Meadow Works (fictional)",
     notes:
@@ -59,7 +59,7 @@ export const demoPeople = [
     fact: "Can explain questionnaire design and the limits of small samples.",
   },
   {
-    name: "Casey Byrne · Demo",
+    name: "Casey Byrne",
     title: "Running coach",
     company: "Steady Miles (fictional)",
     notes:
@@ -94,13 +94,21 @@ export const demoQueries = [
     expected: null,
   },
 ] as const;
-// Additive: never edit or remove a pre-existing person, even if names match.
+// Preserve existing records; only normalize the exact legacy name on tagged sample contacts.
 export async function addDemo(store: Store, now = new Date()) {
   const existing = await store.list("people");
   let added = 0;
   for (const d of demoPeople) {
-    if (existing.some((p) => p.name === d.name && p.tags.includes(demoTag)))
+    const sample = existing.find(
+      (p) =>
+        p.tags.includes(demoTag) &&
+        (p.name === d.name || p.name === `${d.name} · Demo`),
+    );
+    if (sample) {
+      if (sample.name === `${d.name} · Demo`)
+        await store.save("people", { ...sample, name: d.name }, sample.id);
       continue;
+    }
     const p = await store.save("people", {
       name: d.name,
       title: d.title,

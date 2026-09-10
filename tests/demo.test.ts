@@ -23,3 +23,27 @@ test("interview demo adds distinct evidence without modifying existing contacts 
     await s.close();
   }
 });
+
+test("legacy sample names are cleaned without losing notes or changing unrelated contacts", async () => {
+  const s = await new Store({ file: ":memory:" }).open();
+  try {
+    await addDemo(s);
+    const p = (await s.list("people"))[0];
+    await s.save(
+      "people",
+      { ...p, name: `${p.name} · Demo`, notes: "Custom note" },
+      p.id,
+    );
+    const own = await s.save("people", {
+      name: `${p.name} · Demo`,
+      notes: "Personal contact",
+    });
+    assert.equal(await addDemo(s), 0);
+    const updated = await s.get("people", p.id);
+    assert.equal(updated?.name, p.name);
+    assert.equal(updated?.notes, "Custom note");
+    assert.deepEqual(await s.get("people", own.id), own);
+  } finally {
+    await s.close();
+  }
+});
