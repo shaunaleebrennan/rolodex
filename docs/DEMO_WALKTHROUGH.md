@@ -5,16 +5,17 @@ Rolodex connects relationship memory with thoughtful follow-up. This short tour 
 ## 1. Capture the details worth remembering
 
 Open **Morgan Ellis** in People. Morgan’s profile describes leaving salaried employment to establish an independent consultancy. The conversation history adds context about pricing, service packages, and finding the first clients.
-<img width="1155" height="568" alt="Screenshot 2026-09-10 at 23 36 59" src="https://github.com/user-attachments/assets/730f91e4-3403-42b3-9e6d-4175ba75bdb3" />
-
-
+<img width="1240" height="708" alt="Screenshot 2026-09-10 at 23 35 39" src="https://github.com/user-attachments/assets/708c3f72-0806-4f57-b314-c1ba732d18a0" />
 Profiles bring these details together with facts, life updates, dates, and past conversations.
 
-## 2. Find someone from a half-remembered conversation
+## 2. Find someone from a half-remembered conversation<img width="576" height="359" alt="Screenshot 2026-09-10 at 23 40 05" src="https://github.com/user-attachments/assets/28ab1b43-7541-4518-9192-1768f5aa4746" />
 
 Open the assistant and choose **Find by memory**. Try:
 
 > Who was thinking about starting their own business?
+> <img width="576" height="359" alt="Screenshot 2026-09-10 at 23 40 05" src="https://github.com/user-attachments/assets/e9a034e3-851d-40ad-9d2b-60e1fd87d460" />
+<img width="545" height="271" alt="Screenshot 2026-09-10 at 23 40 15" src="https://github.com/user-attachments/assets/76884187-261c-4d74-9250-32af798810a9" />
+
 
 With the demo data indexed, Morgan is an expected candidate. MongoDB Atlas Vector Search retrieves related meaning, so the query does not need to repeat the saved wording. The original excerpts appear alongside each result so you can assess its relevance.
 
