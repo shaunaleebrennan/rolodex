@@ -1,118 +1,133 @@
 # Rolodex
 
-A thoughtful personal CRM: keep track of your people, remember what matters, and reconnect before relationships drift. Built with React, TypeScript, Vite, Node.js, and MongoDB.
+**A personal CRM that turns relationship history into thoughtful follow-up.**
 
-## Start here
+Rolodex helps people remember what matters about their relationships, see who is due a catch-up, and prepare a relevant message. It combines a working personal CRM with MongoDB-backed memory and an AI assistant that retrieves saved context before responding.
 
-Install **Node.js 24 LTS**. Open this project folder in VS Code, then open **Terminal → New Terminal**.
+Built by **Shauna Brennan**, with AI coding assistance, as a hands-on exploration of product design, MongoDB, and tool-using AI.
 
-First-time setup:
+## The problem
+
+An address book remembers who someone is. It rarely remembers what is happening in their life, what you last talked about, or when you meant to reconnect. Those details end up scattered across messages, notes, and memory—and follow-up slips.
+
+Rolodex brings that context together around three questions:
+
+- **Who should I reconnect with?** Check-in dates identify people who need attention.
+- **Why now?** Life updates, important dates, and conversation history provide a reason to reach out.
+- **What should I say?** The assistant uses saved context to help prepare a catch-up and draft a message.
+
+The starting point is personal relationships. The same pattern could support customer advocates, design partners, analysts, and other professional relationships. Those are potential extensions; this prototype is a personal CRM, with no connected company systems.
+
+## Explore the product
+
+| View | What it enables |
+| --- | --- |
+| **Today** | Prioritized catch-ups, upcoming celebrations, due reminders, recent activity, and interaction charts. |
+| **People** | Searchable contacts with profiles, photos, tags, notes, and CSV/vCard import with duplicate review. |
+| **Circles** | Drag people between Inner, Close, Wider, and Distant to set a default check-in rhythm. |
+| **Calendar** | Birthdays and recurring dates, including unknown years and milestone birthdays. |
+| **Timeline** | Conversation history, life updates, and completed reminders, filterable by person and activity type. |
+
+Each profile also holds facts worth remembering, gift ideas, and connections to other people. Last contacted is derived from logged interactions. Individual cadence overrides, snoozing, and opt-out keep nudges under the user's control.
+
+### A short walkthrough
+
+1. **Open Today.** The catch-up list is ordered by due date, with recent context alongside the suggested person.
+2. **Add a fictional contact.** Record a conversation and a life update—for example, a new marketing role and an upcoming product launch.
+3. **Open Plan a catch-up.** Ask: “What should I ask about? Draft a short, friendly message using my saved notes.” With an API key configured, the assistant retrieves relationship context and produces an answer with the records it consulted.
+4. **Log the next conversation.** Check-in status recalculates across the profile, People, Circles, and Today.
+5. **Inspect persistence.** With MongoDB configured, the contact and conversation can be found in Atlas under the `people` and `interactions` collections.
+
+The central workflow is **capture context → identify a timely follow-up → retrieve relevant history → prepare a message → record the interaction**. The user decides what to send and when.
+
+## Why MongoDB
+
+MongoDB is the configured primary store for relationship memory. Its role extends beyond saving the contact list:
+
+| Product requirement | Implementation |
+| --- | --- |
+| Store varied relationship context | Documents hold optional profile details and tags, alongside records for facts, dates, gifts, and life updates. Server-side validation keeps the supported structure consistent. |
+| Retain a growing conversation history | Interactions are stored separately and reference a contact, keeping history from growing indefinitely inside one person document. |
+| Find relevant people | A MongoDB text index supports assistant searches across names, companies, email, notes, and tags. |
+| Retrieve context for a response | The assistant's tools select relevant contacts and return recent conversations, facts, updates, and upcoming dates. |
+| Derive useful activity summaries | The `/api/stats` endpoint uses a MongoDB aggregation to group interactions by month. |
+| Keep related records consistent | Unique IDs and query indexes support lookups; transactional contact deletion removes related records and connections. |
+
+The data model uses eight collections: `people`, `interactions`, `dates`, `facts`, `news`, `reminders`, `gifts`, and `connections`. Records use UUID identifiers and explicit references between entities.
+
+This implementation uses **text search and structured retrieval**. Vector search is a possible future experiment, not an implemented capability.
+
+## How the AI assistant works
+
+The assistant uses the OpenAI Responses API and a bounded loop of read-only tools:
+
+| Tool | Purpose |
+| --- | --- |
+| `list_due_contacts` | Return people due for a catch-up, respecting snoozes and opt-outs. |
+| `search_people` | Find candidate contacts in the stored data. |
+| `get_relationship_context` | Retrieve a person's recent conversations, facts, updates, dates, and check-in status. |
+
+The model chooses which tools to call and can use their results in subsequent steps before answering. The application defines the available tools, validates their inputs, and limits the number of steps. Deterministic code handles dates and cadence; the model helps interpret context and compose a response.
+
+Source cards and tool steps make the answer inspectable. They show consulted records, rather than guaranteeing that every generated sentence is correct. The assistant cannot send messages or modify records. A follow-up reminder is saved through a separate form the user reviews.
+
+Before each AI request, the user explicitly allows their question and relevant relationship context to be shared with OpenAI. Dedicated email, phone, and photo fields are excluded from retrieved context; freeform notes may still contain personal details. Keys remain server-side, and `.env` is excluded from Git.
+
+## Design choices and boundaries
+
+- **Useful before AI setup.** A persistent SQLite demo and clearly labelled offline helper make the product explorable without credentials. The offline helper uses rules and message templates, not an LLM.
+- **Context before automation.** The aim is to make follow-up more relevant while leaving outreach decisions with the user. There is no autonomous messaging or background outreach.
+- **Focused personal scope.** The app runs locally for one user. It has no authentication, multi-user permissions, or email/calendar/contact syncing.
+- **A deliberate scale limit.** The UI currently loads a full snapshot. Larger datasets would require server-side querying and pagination. Some derived views are calculated in application code; the aggregation endpoint is a separate database example.
+- **Separate data stores.** Switching from SQLite to MongoDB does not migrate local records. Each store initializes independently.
+
+The next product experiment would compare an overdue list alone with one that explains **why now** using a recent life event. Relevant measures would include completed follow-ups, repeat weekly use, and the perceived usefulness of suggestions. These are proposed evaluation measures, not measured results; the app does not collect usage telemetry.
+
+## Run it locally
+
+Requires **Node.js 24 LTS**. Clone this repository, open a terminal in the project folder, then run:
 
 ```sh
 npm install
-```
-
-Start the app:
-
-```sh
 npm start
 ```
 
-Open **http://localhost:4173**. The app starts with 32 fictional contacts, conversation history, birthdays, facts, reminders, gifts, and connections. No database account or AI key is needed to try it. Changes persist in a local SQLite demo database (`data/rolodex.sqlite`), not in browser storage.
+Open **http://127.0.0.1:4173**. A fresh demo starts with 32 fictional contacts and sample history. No credentials are needed for local demo mode.
 
-To use the compiled app, run `npm run build` once, then `npm start`. When a build exists, the server serves that build; rebuild after editing frontend code. Without a build, it serves Vite directly.
+| Configuration | Storage | Assistant |
+| --- | --- | --- |
+| No credentials | Local SQLite | Offline helper |
+| `MONGODB_URI` configured | MongoDB | Offline helper |
+| `MONGODB_URI` and `OPENAI_API_KEY` configured | MongoDB | AI assistant |
 
-## Connect your MongoDB Atlas account
+To enable MongoDB and AI, copy [`.env.example`](.env.example) to a private `.env` file beside `package.json`, supply your own credentials, and restart. Keep credentials out of chat, screenshots, and Git. Provider usage may incur charges.
 
-**The connection string goes in a file called `.env` in this project folder, beside `package.json`. It does not go in the React app or into MongoDB’s editor.**
+**[Full setup and troubleshooting guide →](docs/SETUP.md)**
 
-1. In VS Code, duplicate `.env.example` and name the copy `.env`.
-2. In Atlas, open your cluster → **Connect → Drivers** and select **Node.js**.
-3. Copy the connection string into `MONGODB_URI` in `.env`. Replace the password placeholder with your **database user’s** password (not your Atlas website password). URL-encode special characters in the username or password.
-4. In Atlas Network Access, allow the IP address of the computer running this app. Give the database user read/write access to the `rolodex` database.
-5. Run `npm run check:db`. It checks connectivity without printing credentials.
-6. Stop the running app with **Ctrl+C**, then start it again with `npm start`.
+## Validation
 
-```dotenv
-MONGODB_URI=mongodb+srv://YOUR_DATABASE_USER:YOUR_ENCODED_PASSWORD@YOUR_CLUSTER_HOST/?retryWrites=true&w=majority
-MONGODB_DB=rolodex
-SEED_DEMO=true
-```
-
-The sidebar changes to **MongoDB connected**. Collections and indexes are created on first startup. You can inspect records in Atlas’s data browser after saving a contact.
-
-**Switching databases does not migrate data.** The local demo and MongoDB are separate stores. A new MongoDB database receives its own fictional sample data. Set `SEED_DEMO=false` before first launch against a fresh database if you want to start empty. The initialization marker prevents deleted demo contacts from reappearing after restarting.
-
-Never commit `.env`, share a full connection string in chat, or put credentials in a `VITE_` variable. `.env` and local databases are ignored by Git. A configured-but-unreachable MongoDB connection stops startup; the app does not silently switch to a different database.
-
-## Relationship assistant
-
-Without a key, the app offers a clearly labelled **offline helper**: deterministic suggestions based on saved check-in dates, recent notes, and editable message templates. It is not an LLM.
-
-For the AI assistant, add your own API key to `.env` and restart:
-
-```dotenv
-OPENAI_API_KEY=your_private_key
-OPENAI_MODEL=gpt-4.1-mini
-```
-
-The AI assistant uses the OpenAI Responses API and three read-only tools:
-
-- `list_due_contacts`: prioritize actual due/overdue people, respecting snoozes and opt-outs.
-- `search_people`: search MongoDB’s text index for relevant names, companies, tags, and notes.
-- `get_relationship_context`: retrieve recent conversations, facts, life updates, and upcoming dates.
-
-Each AI request requires an in-app checkbox explaining that the question and relevant saved names/notes/history are shared with OpenAI. Email addresses, phone numbers and photos are excluded from retrieved context. `store:false` is sent to the Responses API; this is not a blanket guarantee of zero provider retention. Keep personal data out of a shared interview demo. Each prompt is independent; assistant chat history is not persisted.
-
-The assistant shows the records it consulted and its tool steps. It cannot send messages or change records. Follow-up reminders are created through a separate form you review and save. API usage is billed by your provider. The app never exposes the API key to the browser.
-
-## What works
-
-- **Today:** prioritized catch-ups, upcoming dates, due reminders, recent activity and two charts.
-- **People:** add/edit/delete, photos, name/company/email search, circle/tag filters, profiles and CSV/vCard import with field mapping, preview and duplicate decisions.
-- **Circles:** drag contacts among Inner, Close, Wider and Distant; keyboard-accessible select controls also move contacts. Counts and due status update after saving.
-- **Calendar:** month navigation, annual dates, unknown years, milestone ages and February 29 handling (February 28 in non-leap years).
-- **Timeline:** interactions, life updates and completed reminders, filterable by person and type.
-- **Profiles:** facts, notes, reminders, dates, gift ideas/given/received, connections visible from either person, and interaction history.
-- **Check-ins:** monthly / quarterly / six-monthly / annual defaults, individual overrides, snoozing, and opt-out. Last contacted is always derived from logged interactions. New contacts appear as “First catch-up.”
-
-## Database design
-
-Each entity has its own MongoDB collection: `people`, `interactions`, `dates`, `facts`, `news`, `reminders`, `gifts`, `connections`. Records use UUID `id` fields. Child records reference `personId`; connections also have `otherId`. All input is validated with Zod on the server.
-
-This keeps growing interaction history out of the contact document. Compound indexes support person/date queries and reminder dates. A text index supports assistant search; `/api/stats` demonstrates a MongoDB aggregation grouping interactions by month. Contact deletion uses a transaction to remove related records and both sides of connections (Atlas supports this; self-hosted MongoDB requires a replica set).
-
-The current UI loads one snapshot, appropriate for a small, single-user address book. Larger datasets would need server-side pagination/querying and bounded histories; this is not claimed as an enterprise-scale architecture. This version uses MongoDB text search, **not vector search**.
-
-See [INTERVIEW.md](INTERVIEW.md) for a five-minute demo and the product/architecture story.
-
-## Tests and development
+- **15 automated tests passed** during the build, covering record operations, local persistence, imports, date/cadence logic, validation, and the assistant's mocked tool loop. The TypeScript check and production build also passed.
+- **Browser checks** exercised contact creation and editing, search, conversation logging, status changes, calendar navigation, gifts, connections, reminder completion, CSV import with duplicate skipping, circle dragging with persisted changes, and the offline assistant.
+- **Live local setup:** the project author subsequently confirmed contact persistence in MongoDB Atlas and a successful AI assistant request using private credentials.
+- **Remaining coverage:** the full MongoDB integration suite requires a dedicated test URI and was not run during the build. vCard parsing has unit coverage; its separate browser upload check was interrupted by a file-chooser timeout. Generated-answer quality has not been systematically evaluated.
 
 ```sh
-npm test             # unit and local persistence tests
-npm run build       # typecheck + production build
-npm run check:db     # read-only connectivity check using .env
-npm run test:mongo   # opt-in real MongoDB integration suite
+npm test             # automated tests
+npm run build       # typecheck and production build
+npm run check:db     # MongoDB connectivity check
+npm run test:mongo   # opt-in integration suite; requires MONGODB_TEST_URI
 ```
 
-The MongoDB suite only runs when `MONGODB_TEST_URI` is supplied. Use a dedicated test deployment/user that can create and delete temporary databases. The suite creates an isolated `rolodex_test_<uuid>` database and deletes it afterward. It never uses `MONGODB_URI` or the application database. It tests CRUD, text search, aggregation, and transactional cascades.
+The integration suite uses an isolated temporary database. See the setup guide before running it.
 
-The default server binds to `127.0.0.1`. It has no account/login system, as specified in the original single-user brief. Do not deploy it publicly or use it as a shared CRM without adding authentication, authorization, HTTPS, and a suitable hosting setup. State-changing requests require a per-process token and reject cross-site browser requests.
+## Code map
 
-In a dev container, port 4173 is forwarded privately. The launch configuration binds to all interfaces inside that container so the forwarded browser URL can reach it. For ordinary local use, keep the default loopback binding.
-
-## Project map
-
-| File/folder | Responsibility |
+| Area | Entry point |
 | --- | --- |
-| `server/store.ts` | MongoDB connection, indexes, CRUD, aggregation; local demo adapter |
-| `server/index.ts` | Node server, validated API routes, request protections |
-| `server/assistant.ts` | Offline helper and bounded AI tool loop |
-| `shared/model.ts` | Data types and validation |
-| `shared/logic.ts` | Cadence, dates, relationships and dashboard calculations |
-| `shared/import.ts` | CSV/vCard parsing and duplicate matching |
-| `src/` | React app and all five views |
-| `.env.example` | Credential placeholders and configuration |
-| `tests/` | Behavioral, persistence, import, assistant and MongoDB tests |
-
-Reference docs: [MongoDB Node driver](https://www.mongodb.com/docs/drivers/node/current/connect/mongoclient/), [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses).
+| Database connection, indexes, storage adapters | [`server/store.ts`](server/store.ts) |
+| AI tools and offline helper | [`server/assistant.ts`](server/assistant.ts) |
+| API routes and server | [`server/index.ts`](server/index.ts) |
+| Data model and validation | [`shared/model.ts`](shared/model.ts) |
+| Check-in, date, and dashboard logic | [`shared/logic.ts`](shared/logic.ts) |
+| React interface | [`src/`](src/) |
+| Behavioral tests | [`tests/`](tests/) |
