@@ -39,15 +39,13 @@ export class Store {
           await this.db.collection(kind).createIndex({ personId: 1 });
       }
       await this.db.collection("people").createIndex({ circle: 1, tags: 1 });
-      await this.db
-        .collection("people")
-        .createIndex({
-          name: "text",
-          company: "text",
-          email: "text",
-          notes: "text",
-          tags: "text",
-        });
+      await this.db.collection("people").createIndex({
+        name: "text",
+        company: "text",
+        email: "text",
+        notes: "text",
+        tags: "text",
+      });
       await this.db
         .collection("interactions")
         .createIndex({ personId: 1, date: -1 });
@@ -193,6 +191,45 @@ export class Store {
           .includes(q),
       )
       .slice(0, 20);
+  }
+  memoryCollection() {
+    if (!this.db)
+      throw new InputError("Semantic search requires MongoDB Atlas");
+    return this.db.collection("relationship_memory");
+  }
+  async requireMemoryIndex() {
+    try {
+      const indexes = (await this.memoryCollection()
+        .listSearchIndexes("relationship_memory_v1")
+        .toArray()) as { name: string; queryable?: boolean }[];
+      if (!indexes.some((i) => i.queryable === true)) throw new Error();
+    } catch {
+      throw new InputError(
+        "Find by memory is not ready. Run npm run search:prepare -- --share-notes, then wait for the Atlas search index to become queryable. See docs/SEMANTIC_SEARCH.md.",
+      );
+    }
+  }
+  async vectorMemories(vector: number[]) {
+    try {
+      return await this.memoryCollection()
+        .aggregate<{ id: string; hash: string }>([
+          {
+            $vectorSearch: {
+              index: "relationship_memory_v1",
+              path: "embedding",
+              queryVector: vector,
+              numCandidates: 200,
+              limit: 30,
+            },
+          },
+          { $project: { _id: 0, id: 1, hash: 1 } },
+        ])
+        .toArray();
+    } catch {
+      throw new InputError(
+        "Memory search is unavailable. Check the Atlas index and refresh it with search:prepare. Ordinary contact search still works.",
+      );
+    }
   }
   async monthlyInteractions() {
     if (this.db)

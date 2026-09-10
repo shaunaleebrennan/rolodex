@@ -118,3 +118,7 @@ In a dev container, port 4173 is forwarded privately. The launch configuration b
 | `tests/` | Behavioral, persistence, import, assistant and MongoDB tests |
 
 Reference docs: [MongoDB Node driver](https://www.mongodb.com/docs/drivers/node/current/connect/mongoclient/), [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses).
+
+## Semantic relationship search
+
+See [Find by memory setup](SEMANTIC_SEARCH.md) to prepare the Atlas Vector Search index and try a short evaluation with fictional contacts.

@@ -55,7 +55,9 @@ MongoDB is the configured primary store for relationship memory. Its role extend
 
 The data model uses eight collections: `people`, `interactions`, `dates`, `facts`, `news`, `reminders`, `gifts`, and `connections`. Records use UUID identifiers and explicit references between entities.
 
-This implementation uses **text search and structured retrieval**. Vector search is a possible future experiment, not an implemented capability.
+The optional **Find by memory** feature adds MongoDB Atlas Vector Search: describe an experience or topic, review matching saved excerpts, then prepare a catch-up with a selected person. For example: “Who has experience launching an AI product?” It uses an explicitly prepared embedding index and verifies retrieved excerpts against current records. [Enable semantic search and try the interview evaluation →](docs/SEMANTIC_SEARCH.md)
+
+Ordinary text search and structured retrieval remain available. Live vector-search quality has not been measured in this build environment.
 
 ## How the AI assistant works
 
@@ -65,6 +67,7 @@ The assistant uses the OpenAI Responses API and a bounded loop of read-only tool
 | --- | --- |
 | `list_due_contacts` | Return people due for a catch-up, respecting snoozes and opt-outs. |
 | `search_people` | Find candidate contacts in the stored data. |
+| `search_relationship_memory` | Find candidates by meaning in indexed notes and return matching excerpts (MongoDB configuration required). |
 | `get_relationship_context` | Retrieve a person's recent conversations, facts, updates, dates, and check-in status. |
 
 The model chooses which tools to call and can use their results in subsequent steps before answering. The application defines the available tools, validates their inputs, and limits the number of steps. Deterministic code handles dates and cadence; the model helps interpret context and compose a response.
@@ -106,7 +109,7 @@ To enable MongoDB and AI, copy [`.env.example`](.env.example) to a private `.env
 
 ## Validation
 
-- **15 automated tests passed** during the build, covering record operations, local persistence, imports, date/cadence logic, validation, and the assistant's mocked tool loop. The TypeScript check and production build also passed.
+- **19 automated tests passed** during the build, covering record operations, local persistence, imports, date/cadence logic, validation, the assistant's mocked tool loop, and semantic retrieval consent, embedding validation, and source freshness. The TypeScript check and production build also passed.
 - **Browser checks** exercised contact creation and editing, search, conversation logging, status changes, calendar navigation, gifts, connections, reminder completion, CSV import with duplicate skipping, circle dragging with persisted changes, and the offline assistant.
 - **Live local setup:** the project author subsequently confirmed contact persistence in MongoDB Atlas and a successful AI assistant request using private credentials.
 - **Remaining coverage:** the full MongoDB integration suite requires a dedicated test URI and was not run during the build. vCard parsing has unit coverage; its separate browser upload check was interrupted by a file-chooser timeout. Generated-answer quality has not been systematically evaluated.

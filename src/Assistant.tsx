@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 import type { Snapshot } from "../shared/model";
 import type { AssistantResult } from "../server/assistant";
-import { askAssistant } from "./api";
+import type { MemoryMatch } from "../server/semantic";
+import { askAssistant, findMemory } from "./api";
 import { Modal, Avatar } from "./ui";
 import type { Editor } from "./Records";
 export default function Assistant({
@@ -28,7 +29,10 @@ export default function Assistant({
   onOpen: (id: string) => void;
   onEdit: (e: Editor) => void;
 }) {
-  const person = data.people.find((p) => p.id === personId);
+  const [selectedId, setSelectedId] = useState(personId);
+  const [memoryMode, setMemoryMode] = useState(false);
+  const [matches, setMatches] = useState<MemoryMatch[] | null>(null);
+  const person = data.people.find((p) => p.id === selectedId);
   const [question, setQuestion] = useState(
       person
         ? `Help me prepare a catch-up with ${person.name}, and draft a short message.`
@@ -45,9 +49,15 @@ export default function Assistant({
     setBusy(true);
     setError("");
     setResult(null);
+    setMatches(null);
     setCopied(false);
     try {
-      const r = await askAssistant(q, personId, consent);
+      if (memoryMode) {
+        const r = await findMemory(q, consent);
+        setMatches(r.matches);
+        return;
+      }
+      const r = await askAssistant(q, selectedId, consent);
       setResult(r);
       setDraft(r.draft || "");
     } catch (e) {
@@ -84,13 +94,53 @@ export default function Assistant({
           </span>
         </div>
       )}
+      <div className="prompt-chips" aria-label="Assistant mode">
+        <button
+          aria-pressed={!memoryMode}
+          disabled={busy}
+          onClick={() => {
+            setMemoryMode(false);
+            setConsent(false);
+            setMatches(null);
+            setError("");
+          }}
+        >
+          Prepare a catch-up
+        </button>
+        <button
+          aria-pressed={memoryMode}
+          disabled={busy}
+          onClick={() => {
+            setMemoryMode(true);
+            setConsent(false);
+            setQuestion("");
+            setResult(null);
+            setError("");
+          }}
+        >
+          Find by memory
+        </button>
+      </div>
+      {memoryMode && (
+        <p>
+          Describe what you remember. Search by meaning across indexed notes,
+          conversations, and life updates. Matches are suggestions—check the
+          excerpts. New or edited notes appear after refreshing the search
+          index.
+        </p>
+      )}
       <div className="prompt-chips">
-        {(person
-          ? ["What should I ask about?", "Draft a friendly catch-up message"]
-          : [
-              "Who should I reconnect with this week?",
-              "Help me prepare my next catch-up",
+        {(memoryMode
+          ? [
+              "Who has experience launching an AI product?",
+              "Who was thinking about starting their own business?",
             ]
+          : person
+            ? ["What should I ask about?", "Draft a friendly catch-up message"]
+            : [
+                "Who should I reconnect with this week?",
+                "Help me prepare my next catch-up",
+              ]
         ).map((q) => (
           <button key={q} onClick={() => setQuestion(q)}>
             {q}
@@ -109,28 +159,37 @@ export default function Assistant({
           <textarea
             autoFocus
             rows={3}
-            maxLength={2000}
-            placeholder="Who’s slipped off my radar?"
+            maxLength={memoryMode ? 1000 : 2000}
+            placeholder={
+              memoryMode
+                ? "Who was that person who…?"
+                : "Who’s slipped off my radar?"
+            }
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
           />
           <button
             className="primary"
             aria-label="Ask assistant"
-            disabled={busy || !question.trim() || (aiEnabled && !consent)}
+            disabled={
+              busy ||
+              !question.trim() ||
+              ((aiEnabled || memoryMode) && !consent)
+            }
           >
             <ArrowUp size={19} />
           </button>
         </label>
-        {aiEnabled && (
+        {(aiEnabled || memoryMode) && (
           <label className="check ai-consent">
             <input
               type="checkbox"
               checked={consent}
               onChange={(e) => setConsent(e.target.checked)}
             />
-            Share this question and relevant saved names, notes, conversations,
-            facts, and dates with OpenAI for this request.
+            {memoryMode
+              ? "Share this search query with OpenAI to find similar saved memories."
+              : "Share this question and relevant saved names, notes, conversations, facts, and dates with OpenAI for this request."}
           </label>
         )}
       </form>
@@ -144,6 +203,54 @@ export default function Assistant({
         <p role="alert" className="error">
           {error}
         </p>
+      )}
+      {matches && (
+        <div className="source-list" aria-live="polite">
+          <h3>
+            {matches.length
+              ? "People to explore"
+              : "No current indexed memories found"}
+          </h3>
+          <p>
+            {matches.length
+              ? "Ranked by semantic similarity, not proof of expertise. Read the saved evidence before choosing."
+              : "Try different wording or refresh the index after adding notes. This does not mean nobody in your network fits."}
+          </p>
+          {matches.map((m) => (
+            <div className="source-row" key={m.personId}>
+              <strong>{m.name}</strong>
+              {m.evidence.map((e, i) => (
+                <div key={i}>
+                  <small>{e.label}</small>
+                  <p>{e.text}</p>
+                </div>
+              ))}
+              <button
+                className="secondary"
+                onClick={() => {
+                  setSelectedId(m.personId);
+                  setMemoryMode(false);
+                  setMatches(null);
+                  setConsent(false);
+                  setQuestion(
+                    `Help me prepare a catch-up with ${m.name} about: ${question}. Use saved notes, and distinguish evidence from assumptions.`,
+                  );
+                }}
+              >
+                Prepare a catch-up <ArrowRight size={13} />
+              </button>
+              <button
+                className="text-button"
+                onClick={() => {
+                  onOpen(m.personId);
+                  onClose();
+                }}
+              >
+                Open profile
+              </button>
+            </div>
+          ))}
+        </div>
       )}
       {result && (
         <div className="assistant-result">
@@ -216,13 +323,13 @@ export default function Assistant({
             Nothing has been sent. Review the wording and any personal details
             before sharing.
           </p>
-          {(result.personId || personId) && (
+          {(result.personId || selectedId) && (
             <button
               className="text-button"
               onClick={() => {
                 onEdit({
                   kind: "reminders",
-                  personId: result.personId || personId!,
+                  personId: result.personId || selectedId!,
                 });
                 onClose();
               }}

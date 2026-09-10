@@ -1,3 +1,4 @@
+import { searchMemory } from "./semantic.js";
 import { z } from "zod";
 import { Store, InputError } from "./store.js";
 import { whoToContact, checkIn, upcoming, isoDay } from "../shared/logic.js";
@@ -162,6 +163,20 @@ export async function respond(
       strict: true,
     },
   ];
+  if (store.mode === "mongodb")
+    tools.push({
+      type: "function",
+      name: "search_relationship_memory",
+      description:
+        "Find people by meaning in indexed notes, conversations and life updates, when the user describes an experience or topic rather than a name. Results are candidate matches, not proof. Verify evidence; if unavailable say so.",
+      parameters: {
+        type: "object",
+        properties: { query: { type: "string" } },
+        required: ["query"],
+        additionalProperties: false,
+      },
+      strict: true,
+    });
   const messages: any[] = [
     {
       role: "user",
@@ -244,6 +259,20 @@ export async function respond(
             company: p.company,
           }));
           steps.push("Searched your saved contacts");
+        } else if (call.name === "search_relationship_memory") {
+          const matches = await searchMemory(
+            store,
+            { query: args.query, shareContext },
+            config,
+          );
+          result = matches;
+          for (const m of matches)
+            used.set(m.personId, {
+              id: m.personId,
+              name: m.name,
+              details: m.evidence.map((e) => `${e.label}: ${e.text}`),
+            });
+          steps.push("Searched indexed relationship memories by meaning");
         } else if (call.name === "get_relationship_context") {
           const { personId: id } = z
             .object({ personId: z.string().uuid() })
@@ -251,13 +280,15 @@ export async function respond(
           const p = data.people.find((p) => p.id === id);
           if (!p) throw new Error("Contact not found");
           result = context(p, data);
-          used.set(id, source(p, data));
+          used.set(id, used.get(id) || source(p, data));
           steps.push("Read relationship history for " + p.name);
         } else result = { error: "Unknown tool" };
-      } catch {
+      } catch (e) {
         result = {
           error:
-            "Invalid tool input or contact not found. Use a known contact ID.",
+            e instanceof InputError
+              ? e.message
+              : "Invalid tool input or contact not found. Use a known contact ID.",
         };
       }
       messages.push({

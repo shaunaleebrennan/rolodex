@@ -42,3 +42,9 @@ export const askAssistant = (
     method: "POST",
     body: JSON.stringify({ question, personId, shareContext }),
   });
+
+export const findMemory = (query: string, shareContext: boolean) =>
+  request("/api/memory-search", {
+    method: "POST",
+    body: JSON.stringify({ query, shareContext }),
+  });

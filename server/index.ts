@@ -7,6 +7,7 @@ import { createServer as createViteServer } from "vite";
 import { ZodError } from "zod";
 import { Store } from "./store.js";
 import { seed } from "./seed.js";
+import { searchMemory } from "./semantic.js";
 import { respond } from "./assistant.js";
 import { kinds, type Kind } from "../shared/model.js";
 const app = express();
@@ -71,13 +72,29 @@ app.delete("/api/records/:kind/:id", async (req, res) => {
 });
 // Additional feature routes are registered here before the frontend fallback.
 let assistantBusy = false;
-app.post("/api/assistant", async (req, res, next) => {
+app.post("/api/memory-search", async (req, res, next) => {
   if (assistantBusy)
     return res
       .status(429)
-      .json({
-        error: "One request is already running. Please wait for it to finish.",
-      });
+      .json({ error: "One request is already running. Please wait." });
+  assistantBusy = true;
+  try {
+    res.json({
+      matches: await searchMemory(store, req.body, {
+        key: process.env.OPENAI_API_KEY,
+      }),
+    });
+  } catch (e) {
+    next(e);
+  } finally {
+    assistantBusy = false;
+  }
+});
+app.post("/api/assistant", async (req, res, next) => {
+  if (assistantBusy)
+    return res.status(429).json({
+      error: "One request is already running. Please wait for it to finish.",
+    });
   assistantBusy = true;
   try {
     res.json(
@@ -106,14 +123,12 @@ app.use(
       return res
         .status(400)
         .json({ error: err.issues.map((i) => i.message).join(". ") });
-    res
-      .status(err.status || 500)
-      .json({
-        error:
-          err.status === 400
-            ? err.message
-            : "Something went wrong. Your change was not confirmed. Please try again.",
-      });
+    res.status(err.status || 500).json({
+      error:
+        err.status === 400
+          ? err.message
+          : "Something went wrong. Your change was not confirmed. Please try again.",
+    });
   },
 );
 const arg = (name: string) => {
