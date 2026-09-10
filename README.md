@@ -6,6 +6,12 @@ Rolodex helps people remember what matters about their relationships, see who is
 
 Built by **Shauna Brennan**, with AI coding assistance, as a hands-on exploration of product design, MongoDB, and tool-using AI.
 
+## Try the interview demo
+
+[Follow the two-minute walkthrough](docs/DEMO_WALKTHROUGH.md) with six fictional contacts and a ten-question retrieval evaluation. Add the demo contacts with `npm run demo:add`, then prepare the search index. Existing contacts are not overwritten.
+
+**Availability:** the source and setup guides are shareable here. The app runs locally; no hosted demo or completed video is included yet. Live evaluation scores require the author's private Atlas/API setup and are not claimed in this repository.
+
 ## The problem
 
 An address book remembers who someone is. It rarely remembers what is happening in their life, what you last talked about, or when you meant to reconnect. Those details end up scattered across messages, notes, and memory—and follow-up slips.
@@ -109,7 +115,7 @@ To enable MongoDB and AI, copy [`.env.example`](.env.example) to a private `.env
 
 ## Validation
 
-- **19 automated tests passed** during the build, covering record operations, local persistence, imports, date/cadence logic, validation, the assistant's mocked tool loop, and semantic retrieval consent, embedding validation, and source freshness. The TypeScript check and production build also passed.
+- **20 automated tests passed** during the build, covering record operations, local persistence, imports, date/cadence logic, validation, the assistant's mocked tool loop, and semantic retrieval consent, embedding validation, and source freshness. The TypeScript check and production build also passed.
 - **Browser checks** exercised contact creation and editing, search, conversation logging, status changes, calendar navigation, gifts, connections, reminder completion, CSV import with duplicate skipping, circle dragging with persisted changes, and the offline assistant.
 - **Live local setup:** the project author subsequently confirmed contact persistence in MongoDB Atlas and a successful AI assistant request using private credentials.
 - **Remaining coverage:** the full MongoDB integration suite requires a dedicated test URI and was not run during the build. vCard parsing has unit coverage; its separate browser upload check was interrupted by a file-chooser timeout. Generated-answer quality has not been systematically evaluated.

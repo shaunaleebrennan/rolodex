@@ -49,6 +49,10 @@ Rerun `search:prepare` after adding, editing, or deleting notes. It skips unchan
 
 Similarity is not a probability or proof of expertise. There is no calibrated relevance threshold: even an unrelated query can return nearest neighbours. The UI labels them as candidates and displays actual evidence. Snooze and opt-out govern due-contact recommendations, not user-initiated memory lookup. The full snapshot verification is intentionally suitable for a small personal dataset, not a claim of large-scale performance.
 
+## Ready-made interview demo
+
+Use [the walkthrough and evaluation commands](DEMO_WALKTHROUGH.md) to add six fictional contacts and run ten fixed queries. The optional manual example below is a smaller alternative.
+
 ## Small interview evaluation
 
 Create three fictional contacts with these profile notes:

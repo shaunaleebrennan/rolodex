@@ -1,5 +1,6 @@
 import { addMonths, subDays, format } from "date-fns";
 import { Store } from "./store.js";
+import { demoPeople } from "./demo.js";
 import { circles } from "../shared/model.js";
 const names = [
   "Aoife Murphy",
@@ -45,6 +46,34 @@ const companies = [
   "Forma",
   "Horizon",
 ];
+const interests = [
+  "ceramics and wheel throwing",
+  "urban birdwatching",
+  "restoring old bicycles",
+  "sourdough baking",
+  "learning conversational Italian",
+  "coastal landscape painting",
+  "building balcony vegetable gardens",
+  "community theatre",
+  "repairing vintage radios",
+  "jazz piano improvisation",
+  "kayaking sheltered waterways",
+  "learning Irish place names",
+  "documentary film editing",
+  "sewing and clothing repairs",
+  "chess puzzles",
+  "local history walking tours",
+  "home composting",
+  "cooking regional Mexican dishes",
+  "amateur astronomy",
+  "bookbinding",
+  "indoor climbing",
+  "sailing lessons",
+  "choir arranging",
+  "woodworking hand tools",
+  "wildlife illustration",
+  "board-game design",
+];
 export async function seed(store: Store, now = new Date()) {
   if ((await store.list("people")).length) return;
   const people = [];
@@ -53,9 +82,12 @@ export async function seed(store: Store, now = new Date()) {
     const p = await store.save("people", {
       name: names[i],
       company: companies[i % 8],
-      title: ["Product designer", "Marketing lead", "Founder", "Engineer"][
-        i % 4
-      ],
+      title:
+        i < demoPeople.length
+          ? demoPeople[i].title
+          : ["Product designer", "Marketing lead", "Founder", "Engineer"][
+              i % 4
+            ],
       email: `${names[i].split(" ")[0].toLowerCase()}${i}@example.com`,
       city: ["Dublin", "London", "Berlin", "Amsterdam"][i % 4],
       timezone: [
@@ -69,11 +101,10 @@ export async function seed(store: Store, now = new Date()) {
         ["friends", "university", "design", "ex-colleagues"][i % 4],
         i % 3 === 0 ? "running" : "coffee",
       ],
-      notes: [
-        "Always has a good book recommendation.",
-        "Met through our old team. Enjoys a long walk and a good conversation.",
-        "Working on something new. Ask how it’s going.",
-      ][i % 3],
+      notes:
+        i < demoPeople.length
+          ? demoPeople[i].notes
+          : `Interested in ${interests[i - demoPeople.length]}. Ask about their latest project.`,
       metWhere: [
         "University",
         "Previous job",
@@ -88,12 +119,15 @@ export async function seed(store: Store, now = new Date()) {
         personId: p.id,
         type: ["call", "message", "meet-up", "email"][(i + j) % 4],
         date: format(subDays(now, age + j * (40 + i)), "yyyy-MM-dd"),
-        notes: [
-          "Caught up over coffee. Talked about work and plans for the autumn.",
-          "A quick check-in. Lots going on with the new role.",
-          "Lovely to reconnect. We should do this more often.",
-          "Shared a recommendation and caught up on family news.",
-        ][(i + j) % 4],
+        notes:
+          i < demoPeople.length
+            ? [
+                demoPeople[i].conversation,
+                demoPeople[i].notes,
+                demoPeople[i].fact,
+                `We agreed to reconnect about: ${demoPeople[i].title.toLowerCase()} projects.`,
+              ][j]
+            : `${["Discussed a first attempt at", "Swapped recommendations about", "Compared notes on", "Made plans to try"][j]} ${interests[i - demoPeople.length]}. ${["They wanted a practical starting point.", "A local group could be a useful introduction.", "They had learned something worth sharing.", "Agreed to check in on progress next time."][j]}`,
       });
     const birthday = addMonths(subDays(now, -((i % 20) + 2)), i % 3);
     await store.save("dates", {
@@ -107,24 +141,30 @@ export async function seed(store: Store, now = new Date()) {
     if (i < 12)
       await store.save("news", {
         personId: p.id,
-        text: [
-          "Starting a new role at a design studio.",
-          "Just moved into a new home.",
-          "Training for their first half marathon.",
-          "Planning a trip to Italy next month.",
-        ][i % 4],
+        text:
+          i < demoPeople.length
+            ? demoPeople[i].update
+            : [
+                "Starting a new role at a design studio.",
+                "Just moved into a new home.",
+                "Training for their first half marathon.",
+                "Planning a trip to Italy next month.",
+              ][i % 4],
         date: format(subDays(now, i + 2), "yyyy-MM-dd"),
       });
     if (i < 10)
       await store.save("facts", {
         personId: p.id,
-        text: [
-          "Loves film photography.",
-          "Coffee order: flat white, oat milk.",
-          "Allergic to shellfish.",
-          "Big Arsenal supporter.",
-          "Partner’s name is Sam.",
-        ][i % 5],
+        text:
+          i < demoPeople.length
+            ? demoPeople[i].fact
+            : [
+                "Loves film photography.",
+                "Coffee order: flat white, oat milk.",
+                "Allergic to shellfish.",
+                "Big Arsenal supporter.",
+                "Partner’s name is Sam.",
+              ][i % 5],
       });
     if (i < 5)
       await store.save("reminders", {
