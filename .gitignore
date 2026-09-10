@@ -43,3 +43,6 @@ pnpm-debug.log*
 .vscode/
 *.swp
 Thumbs.db
+# Local runtime
+data/
+.sites-runtime/

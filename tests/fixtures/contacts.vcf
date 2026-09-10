@@ -1,0 +1,7 @@
+BEGIN:VCARD
+VERSION:3.0
+FN:QA VCard Imported
+N:Imported;QA VCard;;;
+EMAIL:qa.vcard@example.com
+ORG:QA Import Studio
+END:VCARD

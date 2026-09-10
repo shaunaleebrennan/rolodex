@@ -1,0 +1,46 @@
+{
+  "name": "rolodex",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --import tsx server/index.ts",
+    "dev": "node --import tsx server/index.ts",
+    "build": "tsc --noEmit && vite build",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:mongo": "node --import tsx --test tests/mongo.integration.ts",
+    "check:db": "node --import tsx scripts/check-db.ts"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@tanstack/react-table": "^8.21.3",
+    "date-fns": "^4.1.0",
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "ical.js": "^2.2.1",
+    "lucide-react": "^0.468.0",
+    "mongodb": "^6.20.0",
+    "papaparse": "^5.5.3",
+    "react": "^19.1.1",
+    "react-day-picker": "^9.11.1",
+    "react-dom": "^19.1.1",
+    "recharts": "^3.2.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.3.0",
+    "@types/papaparse": "^5.3.16",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^4.7.0",
+    "prettier": "^3.9.6",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "vite": "^6.3.6"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}
