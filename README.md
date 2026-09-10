@@ -131,6 +131,16 @@ npm run test:mongo   # opt-in integration suite; requires MONGODB_TEST_URI
 
 The integration suite uses an isolated temporary database. See the setup guide before running it.
 
+## Screenshots
+<img width="610" height="416" alt="Screenshot 2026-09-10 at 23 43 46" src="https://github.com/user-attachments/assets/feb497da-e170-4371-a85a-ccfc7a886541" />
+<img width="1321" height="698" alt="Screenshot 2026-09-10 at 23 44 48" src="https://github.com/user-attachments/assets/20f8f83b-2aa1-4875-a000-719a6725020d" />
+<img width="1317" height="700" alt="Screenshot 2026-09-10 at 23 45 00" src="https://github.com/user-attachments/assets/ec17a51d-81e6-4dee-808f-a6dcaac3231c" />
+<img width="1323" height="703" alt="Screenshot 2026-09-10 at 23 45 13" src="https://github.com/user-attachments/assets/65c7446d-bfdf-4ee2-8576-826d1eaa38d2" />
+<img width="1326" height="705" alt="Screenshot 2026-09-10 at 23 45 22" src="https://github.com/user-attachments/assets/9a00ebbd-f273-4886-b295-577de192209d" />
+<img width="1324" height="698" alt="Screenshot 2026-09-10 at 23 45 30" src="https://github.com/user-attachments/assets/ee6d511c-79af-4ac4-87f2-19d034f5e65f" />
+<img width="1322" height="706" alt="Screenshot 2026-09-10 at 23 45 38" src="https://github.com/user-attachments/assets/89647ff1-133d-483a-a6b0-da02c8903d8a" />
+
+
 ## Code map
 
 | Area | Entry point |
@@ -142,3 +152,5 @@ The integration suite uses an isolated temporary database. See the setup guide b
 | Check-in, date, and dashboard logic | [`shared/logic.ts`](shared/logic.ts) |
 | React interface | [`src/`](src/) |
 | Behavioral tests | [`tests/`](tests/) |
+
+
