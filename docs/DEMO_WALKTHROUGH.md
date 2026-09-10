@@ -5,6 +5,8 @@ Rolodex connects relationship memory with thoughtful follow-up. This short tour 
 ## 1. Capture the details worth remembering
 
 Open **Morgan Ellis** in People. Morgan’s profile describes leaving salaried employment to establish an independent consultancy. The conversation history adds context about pricing, service packages, and finding the first clients.
+<img width="1155" height="568" alt="Screenshot 2026-09-10 at 23 36 59" src="https://github.com/user-attachments/assets/730f91e4-3403-42b3-9e6d-4175ba75bdb3" />
+
 
 Profiles bring these details together with facts, life updates, dates, and past conversations.
 
