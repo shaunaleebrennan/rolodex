@@ -2,7 +2,16 @@
   "name": "rolodex",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:24",
   "containerEnv": {
-    "AGENT_BROWSER_EXECUTABLE_PATH": "/usr/bin/chromium"
+    "AGENT_BROWSER_EXECUTABLE_PATH": "/usr/bin/chromium",
+    "HOST": "0.0.0.0"
   },
-  "postCreateCommand": "bash .devcontainer/setup.sh"
+  "postCreateCommand": "npm install",
+  "forwardPorts": [4173],
+  "portsAttributes": {
+    "4173": {
+      "label": "Rolodex",
+      "onAutoForward": "openBrowser",
+      "visibility": "private"
+    }
+  }
 }

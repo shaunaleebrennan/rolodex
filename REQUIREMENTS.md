@@ -1,5 +1,7 @@
 # Rolodex — Requirements
 
+> **Implementation update (10 September 2026):** The user requested a complete build for a MongoDB interview project. MongoDB replaces SQLite as the configured primary store; SQLite remains a credential-free local demo. An optional, read-only relationship assistant is now in scope, with an explicitly labelled offline helper when no AI key is configured. These updates supersede the original SQLite-only and no-AI constraints below. The app remains single-user and locally run.
+
 ## Summary
 
 Rolodex is a personal CRM you run on your own computer — a private, thoughtful address book for the
