@@ -13,7 +13,7 @@ Profiles bring these details together with facts, life updates, dates, and past 
 Open the assistant and choose **Find by memory**. Try:
 
 > Who was thinking about starting their own business?
-> <img width="576" height="359" alt="Screenshot 2026-09-10 at 23 40 05" src="https://github.com/user-attachments/assets/e9a034e3-851d-40ad-9d2b-60e1fd87d460" />
+ <img width="576" height="359" alt="Screenshot 2026-09-10 at 23 40 05" src="https://github.com/user-attachments/assets/e9a034e3-851d-40ad-9d2b-60e1fd87d460" />
 <img width="545" height="271" alt="Screenshot 2026-09-10 at 23 40 15" src="https://github.com/user-attachments/assets/76884187-261c-4d74-9250-32af798810a9" />
 
 
