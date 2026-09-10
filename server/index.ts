@@ -9,21 +9,149 @@ import { Store } from "./store.js";
 import { seed } from "./seed.js";
 import { searchMemory } from "./semantic.js";
 import { respond } from "./assistant.js";
+import {
+  OAUTH_STATE_COOKIE,
+  OAUTH_STATE_MAX_AGE_SECONDS,
+  SESSION_COOKIE,
+  SESSION_MAX_AGE_SECONDS,
+  cookieOptions,
+  createOAuthState,
+  createSignedValue,
+  getAuthConfig,
+  isAllowedLogin,
+  sessionFromCookie,
+  validOAuthState,
+} from "./auth.js";
 import { kinds, type Kind } from "../shared/model.js";
+
+const auth = getAuthConfig();
 const app = express();
 app.disable("x-powered-by");
 const token = randomBytes(32).toString("hex");
+app.use((_req, res, next) => {
+  res.set("Referrer-Policy", "no-referrer");
+  res.set("X-Content-Type-Options", "nosniff");
+  next();
+});
 app.use(express.json({ limit: "3mb" }));
+
+const setCookie = (
+  res: express.Response,
+  name: string,
+  value: string,
+  maxAge: number,
+) => res.append("Set-Cookie", `${name}=${value}; ${cookieOptions(maxAge, auth.production)}`);
+const clearCookie = (res: express.Response, name: string) =>
+  setCookie(res, name, "", 0);
+const authFailure = (res: express.Response) =>
+  res.redirect(303, "/?auth=failed");
+
+app.get("/healthz", (_req, res) => res.json({ ok: true }));
+app.get("/api/health", (_req, res) => res.json({ ok: true }));
+app.get("/api/auth/session", (req, res) => {
+  const session = sessionFromCookie(req.headers.cookie, auth);
+  res.set("Cache-Control", "no-store");
+  res.json({
+    authenticated: !!session,
+    authEnabled: auth.enabled,
+    login: auth.enabled && session ? session.login : undefined,
+  });
+});
+app.get("/auth/login", (_req, res) => {
+  if (!auth.enabled) return res.status(404).end();
+  const state = createOAuthState();
+  setCookie(
+    res,
+    OAUTH_STATE_COOKIE,
+    createSignedValue(state, auth.secret),
+    OAUTH_STATE_MAX_AGE_SECONDS,
+  );
+  const authorization = new URL("https://github.com/login/oauth/authorize");
+  authorization.searchParams.set("client_id", auth.clientId);
+  authorization.searchParams.set("redirect_uri", auth.callbackUrl);
+  authorization.searchParams.set("scope", "read:user");
+  authorization.searchParams.set("state", state.value);
+  res.redirect(303, authorization.toString());
+});
+app.get("/auth/callback", async (req, res) => {
+  if (
+    !auth.enabled ||
+    typeof req.query.state !== "string" ||
+    !validOAuthState(req.query.state, req.headers.cookie, auth)
+  ) {
+    clearCookie(res, OAUTH_STATE_COOKIE);
+    return authFailure(res);
+  }
+  clearCookie(res, OAUTH_STATE_COOKIE);
+  if (typeof req.query.code !== "string" || req.query.error) return authFailure(res);
+  try {
+    const tokenResponse = await fetch(
+      "https://github.com/login/oauth/access_token",
+      {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_id: auth.clientId,
+          client_secret: auth.clientSecret,
+          code: req.query.code,
+          redirect_uri: auth.callbackUrl,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      },
+    );
+    const tokenData = (await tokenResponse.json()) as { access_token?: unknown };
+    if (!tokenResponse.ok || typeof tokenData.access_token !== "string")
+      return authFailure(res);
+    const profileResponse = await fetch("https://api.github.com/user", {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${tokenData.access_token}`,
+        "User-Agent": "shauna-rolodex",
+      },
+      signal: AbortSignal.timeout(10_000),
+    });
+    const profile = (await profileResponse.json()) as { login?: unknown };
+    if (
+      !profileResponse.ok ||
+      !isAllowedLogin(profile.login, auth.allowedLogin)
+    )
+      return authFailure(res);
+    setCookie(
+      res,
+      SESSION_COOKIE,
+      createSignedValue(
+        {
+          login: profile.login,
+          expiresAt: Date.now() + SESSION_MAX_AGE_SECONDS * 1000,
+        },
+        auth.secret,
+      ),
+      SESSION_MAX_AGE_SECONDS,
+    );
+    res.redirect(303, "/");
+  } catch {
+    authFailure(res);
+  }
+});
+app.post("/auth/logout", (req, res) => {
+  if (req.headers["sec-fetch-site"] === "cross-site")
+    return res.status(403).json({ error: "Open shauna-rolodex directly to use it." });
+  clearCookie(res, SESSION_COOKIE);
+  clearCookie(res, OAUTH_STATE_COOKIE);
+  res.status(204).end();
+});
 app.use("/api", (req, res, next) => {
   res.set("Cache-Control", "no-store");
   res.set("X-Content-Type-Options", "nosniff");
   if (req.headers["sec-fetch-site"] === "cross-site")
-    return res.status(403).json({ error: "Open Rolodex directly to use it." });
+    return res.status(403).json({ error: "Open shauna-rolodex directly to use it." });
+  if (!sessionFromCookie(req.headers.cookie, auth))
+    return res.status(401).json({ error: "Sign in to access your rolodex." });
   if (
     !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
     req.headers["x-rolodex-token"] !== token
   )
-    return res.status(403).json({ error: "Refresh Rolodex and try again." });
+    return res.status(403).json({ error: "Refresh shauna-rolodex and try again." });
   next();
 });
 const store = new Store({
@@ -50,7 +178,6 @@ app.get("/api/state", async (_req, res) =>
     token,
   }),
 );
-app.get("/api/health", (_req, res) => res.json({ ok: true, mode: store.mode }));
 app.get("/api/stats", async (_req, res) =>
   res.json(await store.monthlyInteractions()),
 );
@@ -149,7 +276,7 @@ if (existsSync("dist/index.html")) {
 }
 const server = app.listen(port, host, () =>
   console.log(
-    `Rolodex is ready at http://${host}:${port} (${store.mode === "mongodb" ? "MongoDB connected" : "local demo"})`,
+    `shauna-rolodex is ready at http://${host}:${port} (${store.mode === "mongodb" ? "MongoDB connected" : "local demo"})`,
   ),
 );
 for (const signal of ["SIGTERM", "SIGINT"])

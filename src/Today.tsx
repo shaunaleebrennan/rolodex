@@ -422,7 +422,7 @@ export default function Today({
       </div>
       <section className="panel recent-panel">
         <header className="section-head">
-          <h2>Recently, in your Rolodex</h2>
+          <h2>Recently, in your shauna-rolodex</h2>
           <button
             className="text-button"
             onClick={() => onNavigate("Timeline")}

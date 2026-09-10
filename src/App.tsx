@@ -16,7 +16,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { type Person, emptySnapshot } from "../shared/model";
-import { getState, deleteRecord } from "./api";
+import { getAuthSession, getState, deleteRecord, logout, type AuthSession } from "./api";
 import { People, PersonForm, ImportContacts, PersonBasics } from "./People";
 import { Modal, Empty } from "./ui";
 import Circles, { CadenceForm, Status } from "./Circles";
@@ -50,6 +50,7 @@ export default function App() {
     [rhythm, setRhythm] = useState<Person | null>(null),
     [editor, setEditor] = useState<Editor | null>(null),
     [assistant, setAssistant] = useState<{ personId?: string } | null>(null);
+  const [auth, setAuth] = useState<AuthSession | null>(null);
   const dataRef = useRef(state.data);
   dataRef.current = state.data;
   useEffect(
@@ -69,7 +70,15 @@ export default function App() {
     setLoaded(true);
   };
   useEffect(() => {
-    refresh().catch((e) => setError(e.message));
+    getAuthSession()
+      .then(async (session) => {
+        setAuth(session);
+        if (session.authenticated) await refresh();
+      })
+      .catch((e) => {
+        setError(e.message);
+        setAuth({ authenticated: false, authEnabled: true });
+      });
   }, []);
   useEffect(() => {
     if (toast) {
@@ -79,13 +88,46 @@ export default function App() {
   }, [toast]);
   const saved = async () => {
     await refresh();
-    setToast("Saved to your Rolodex");
+    setToast("Saved to your shauna-rolodex");
   };
   const open = (id: string) => {
     setSelected(id);
     setView("People");
   };
   const person = state.data.people.find((p) => p.id === selected);
+  if (!auth) return <div className="login-screen">Checking sign-in status…</div>;
+  if (!auth.authenticated)
+    return (
+      <main className="login-screen">
+        <div className="login-card">
+          <span className="brand-icon">
+            <BookOpen size={25} />
+          </span>
+          <p className="eyebrow">PRIVATE WORKSPACE</p>
+          <h1>shauna-rolodex</h1>
+          <p>
+            Your relationship history stays private. Sign in with the approved
+            GitHub account to continue.
+          </p>
+          {auth.authEnabled ? (
+            <a className="primary login-button" href="/auth/login">
+              Sign in with GitHub
+            </a>
+          ) : (
+            <p className="muted">
+              Authentication is disabled for this local development server.
+            </p>
+          )}
+          {new URLSearchParams(window.location.search).get("auth") ===
+            "failed" && (
+            <p role="alert" className="error">
+              Sign-in did not complete. Please try again.
+            </p>
+          )}
+          {error && <p role="alert" className="error">{error}</p>}
+        </div>
+      </main>
+    );
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -101,7 +143,7 @@ export default function App() {
           <span className="brand-icon">
             <BookOpen size={23} />
           </span>
-          rolodex<span className="brand-dot">.</span>
+          shauna-rolodex<span className="brand-dot">.</span>
         </a>
         <p className="nav-label">YOUR SPACE</p>
         <nav aria-label="Main navigation">
@@ -139,7 +181,7 @@ export default function App() {
           <div className="profile">
             <span className="profile-avatar">ME</span>
             <span>
-              My Rolodex<small>A little closer, every day</small>
+              My shauna-rolodex<small>A little closer, every day</small>
             </span>
           </div>
         </div>
@@ -154,6 +196,21 @@ export default function App() {
             <Plus size={17} />
             Add person
           </button>
+          {auth.authEnabled && (
+            <button
+              className="text-button"
+              onClick={() =>
+                logout()
+                  .then(() => {
+                    setAuth({ authenticated: false, authEnabled: true });
+                    setLoaded(false);
+                  })
+                  .catch((e) => setError(e.message))
+              }
+            >
+              Sign out
+            </button>
+          )}
         </header>
         <main>
           {error && (
@@ -170,7 +227,7 @@ export default function App() {
             </div>
           )}
           {!loaded ? (
-            <Empty>Opening your Rolodex…</Empty>
+            <Empty>Opening your shauna-rolodex…</Empty>
           ) : person ? (
             <>
               <button
@@ -355,7 +412,7 @@ export default function App() {
         </Modal>
       )}
       {setup && (
-        <Modal title="Your Rolodex setup" onClose={() => setSetup(false)}>
+        <Modal title="Your shauna-rolodex setup" onClose={() => setSetup(false)}>
           <p>
             Storage:{" "}
             <strong>
@@ -368,7 +425,7 @@ export default function App() {
             The local demo saves changes on this computer. To connect your Atlas
             database, add your MongoDB connection string to{" "}
             <code>MONGODB_URI</code> in your private <code>.env</code> file,
-            then restart Rolodex.
+            then restart shauna-rolodex.
           </p>
           <p className="muted">
             Your database credentials stay on the server. Never paste them into

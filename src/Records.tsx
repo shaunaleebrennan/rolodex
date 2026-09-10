@@ -684,7 +684,7 @@ export function PersonRecords({
       </Section>
       {deleting && (
         <Modal title="Remove this record?" onClose={() => setDeleting(null)}>
-          <p>This removes the selected record from your Rolodex.</p>
+          <p>This removes the selected record from your shauna-rolodex.</p>
           <footer>
             <button className="secondary" onClick={() => setDeleting(null)}>
               Cancel

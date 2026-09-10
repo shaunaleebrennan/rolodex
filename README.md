@@ -12,7 +12,7 @@ A saved note says someone is leaving employment to establish a consultancy. Mont
 
 [Explore the product walkthrough](docs/DEMO_WALKTHROUGH.md) or [run Rolodex locally](#run-it-locally). The sample dataset includes fictional contacts with distinct stories to explore.
 
-**Project status:** working local prototype with MongoDB persistence, semantic retrieval, and an optional AI assistant. A hosted demo is not currently available. Retrieval quality has not yet been systematically evaluated.
+**Project status:** working local prototype with MongoDB persistence, semantic retrieval, and an optional AI assistant. A private Render deployment can be protected with GitHub OAuth. Retrieval quality has not yet been systematically evaluated.
 
 ## The problem
 
@@ -88,7 +88,7 @@ The user enables AI sharing once after seeing what is sent to OpenAI. The choice
 
 - **Useful before AI setup.** A persistent SQLite demo and clearly labelled offline helper make the product explorable without credentials. The offline helper uses rules and message templates, not an LLM.
 - **Context before automation.** The aim is to make follow-up more relevant while leaving outreach decisions with the user. There is no autonomous messaging or background outreach.
-- **Focused personal scope.** The app runs locally for one user. It has no authentication, multi-user permissions, or email/calendar/contact syncing.
+- **Focused personal scope.** The app is designed for one user. Local development can run without OAuth; a deployed instance requires GitHub authentication for the configured owner. It has no multi-user permissions or email/calendar/contact syncing.
 - **A deliberate scale limit.** The UI currently loads a full snapshot. Larger datasets would require server-side querying and pagination. Some derived views are calculated in application code; the aggregation endpoint is a separate database example.
 - **Separate data stores.** Switching from SQLite to MongoDB does not migrate local records. Each store initializes independently.
 
@@ -114,6 +114,22 @@ Open **http://127.0.0.1:4173**. A fresh demo starts with 32 fictional contacts a
 To enable MongoDB and AI, copy [`.env.example`](.env.example) to a private `.env` file beside `package.json`, supply your own credentials, and restart. Keep credentials out of chat, screenshots, and Git. Provider usage may incur charges.
 
 **[Full setup and troubleshooting guide →](docs/SETUP.md)**
+
+## Deploy privately to Render
+
+The included [`render.yaml`](render.yaml) creates a Node 24 web service, builds with `npm ci && npm run build`, starts with `npm start`, and checks the non-sensitive `/healthz` endpoint. It intentionally contains no credentials. The application refuses to start in production unless GitHub OAuth is fully configured.
+
+1. In GitHub **Settings → Developer settings → OAuth Apps**, create an OAuth App owned by the account that will sign in. Set the **Authorization callback URL** to `https://YOUR-RENDER-SERVICE.onrender.com/auth/callback`. GitHub OAuth App callbacks must match exactly.
+2. Create the Render Blueprint from this repository. Set `APP_URL` to the final HTTPS Render origin (no path), and enter `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` as Render secret environment variables. Render generates `AUTH_SECRET`; regenerate it to invalidate all sessions if needed.
+3. `ALLOWED_GITHUB_LOGIN` is deliberately fixed in the blueprint to `shaunaleebrennan`. Keep it that way unless ownership is intentionally transferred. Authentication uses only the GitHub `read:user` scope and accepts no other login.
+4. Create a dedicated MongoDB Atlas database user with access only to this database. Store its URI in Render's `MONGODB_URI` secret, use TLS (the standard Atlas URI does), and restrict Atlas network access to Render's egress addresses or a private network option appropriate for the selected Render plan. Do not expose a database port publicly or put an Atlas URI in client-side `VITE_` configuration.
+5. Leave `SEED_DEMO=false` for a new private deployment, then deploy. Optional OpenAI settings remain server-only Render secrets.
+
+Sessions are signed and expire after eight hours; cookies are `httpOnly`, `SameSite=Lax`, and `Secure` in production. The health endpoint returns only `{ "ok": true }`; CRM APIs require the authenticated session.
+
+### Local authentication behavior
+
+OAuth is **disabled only when `NODE_ENV` is not `production` and every OAuth variable is absent**, preserving the existing credential-free local demo path. If any OAuth variable is set, all OAuth variables must be set or startup fails. With a complete local OAuth configuration, use an `APP_URL` such as `http://127.0.0.1:4173` and register its `/auth/callback` URL in GitHub. Production always requires HTTPS `APP_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `AUTH_SECRET`, and `ALLOWED_GITHUB_LOGIN`.
 
 ## Validation
 
