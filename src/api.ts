@@ -13,13 +13,31 @@ async function request(url: string, options: RequestInit = {}) {
   if (!r.ok) throw new Error(data.error || "Unable to save. Please try again.");
   return data;
 }
+export type AuthSession = {
+  authenticated: boolean;
+  authEnabled: boolean;
+  login?: string;
+};
+export async function getAuthSession(): Promise<AuthSession> {
+  const response = await fetch("/api/auth/session", { cache: "no-store" });
+  if (!response.ok) throw new Error("Unable to check sign-in status.");
+  return response.json();
+}
+export async function logout() {
+  const response = await fetch("/auth/logout", {
+    method: "POST",
+    headers: { "X-Rolodex-Token": token },
+  });
+  if (!response.ok) throw new Error("Unable to sign out. Please try again.");
+  token = "";
+}
 export async function getState(): Promise<{
   data: Snapshot;
   mode: "mongodb" | "local";
   aiEnabled: boolean;
 }> {
   const data = await request("/api/state");
-  token = data.token;
+  token = typeof data.token === "string" ? data.token : "";
   return data;
 }
 export const saveRecord = <K extends Kind>(

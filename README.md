@@ -10,9 +10,9 @@ Branched from ed-donner/rolodex, built and enriched by **Shauna Brennan**, with 
 
 A saved note says someone is leaving employment to establish a consultancy. Months later, you remember the idea but not the person's name. **Find by memory** lets you search “Who was thinking about starting their own business?”, inspect the matching notes, and prepare a relevant catch-up.
 
-[Explore the product walkthrough](docs/DEMO_WALKTHROUGH.md) or [run Rolodex locally](#run-it-locally). The sample dataset includes fictional contacts with distinct stories to explore.
+[Explore the product walkthrough](docs/DEMO_WALKTHROUGH.md), [view the live public demo](https://shauna-rolodex.onrender.com), or [run Rolodex locally](#run-it-locally). The sample dataset includes fictional contacts with distinct stories to explore.
 
-**Project status:** working local prototype with MongoDB persistence, semantic retrieval, and an optional AI assistant. A hosted demo is not currently available. Retrieval quality has not yet been systematically evaluated.
+**Project status:** [shauna-rolodex is live on Render](https://shauna-rolodex.onrender.com) as a public, read-only demo with MongoDB persistence, semantic retrieval, and an optional AI assistant. GitHub OAuth permits edits only for its configured owner. Retrieval quality has not yet been systematically evaluated.
 
 ## The problem
 
@@ -88,7 +88,7 @@ The user enables AI sharing once after seeing what is sent to OpenAI. The choice
 
 - **Useful before AI setup.** A persistent SQLite demo and clearly labelled offline helper make the product explorable without credentials. The offline helper uses rules and message templates, not an LLM.
 - **Context before automation.** The aim is to make follow-up more relevant while leaving outreach decisions with the user. There is no autonomous messaging or background outreach.
-- **Focused personal scope.** The app runs locally for one user. It has no authentication, multi-user permissions, or email/calendar/contact syncing.
+- **Focused personal scope.** The app is designed for one user. Local development can run without OAuth; a deployed instance lets visitors browse a read-only demo, while GitHub authentication restricts every edit and AI request to the configured owner. It has no multi-user permissions or email/calendar/contact syncing.
 - **A deliberate scale limit.** The UI currently loads a full snapshot. Larger datasets would require server-side querying and pagination. Some derived views are calculated in application code; the aggregation endpoint is a separate database example.
 - **Separate data stores.** Switching from SQLite to MongoDB does not migrate local records. Each store initializes independently.
 
@@ -115,9 +115,25 @@ To enable MongoDB and AI, copy [`.env.example`](.env.example) to a private `.env
 
 **[Full setup and troubleshooting guide →](docs/SETUP.md)**
 
+## Deploy a public read-only demo to Render
+
+The included [`render.yaml`](render.yaml) creates a Node 24 web service, builds with `npm ci --include=dev && npm run build`, starts with `npm start`, and checks the non-sensitive `/healthz` endpoint. It intentionally contains no credentials. The application refuses to start in production unless GitHub OAuth is fully configured.
+
+1. In GitHub **Settings → Developer settings → OAuth Apps**, create an OAuth App owned by the account that will sign in. Set the **Authorization callback URL** to `https://YOUR-RENDER-SERVICE.onrender.com/auth/callback`. GitHub OAuth App callbacks must match exactly.
+2. Create the Render Blueprint from this repository. Set `APP_URL` to the final HTTPS Render origin (no path), and enter `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` as Render secret environment variables. Render generates `AUTH_SECRET`; regenerate it to invalidate all sessions if needed.
+3. `ALLOWED_GITHUB_LOGIN` is deliberately fixed in the blueprint to `shaunaleebrennan`. Keep it that way unless ownership is intentionally transferred. Authentication uses only the GitHub `read:user` scope and accepts no other login.
+4. Create a dedicated MongoDB Atlas database user with access only to this database. Store its URI in Render's `MONGODB_URI` secret and use TLS (the standard Atlas URI does). In Atlas Network Access, allowlist Render's outbound IP ranges from the service's **Connect → Outbound** view, or use dedicated outbound IPs/private networking for a narrower allowlist. Do not expose a database port publicly or put an Atlas URI in client-side `VITE_` configuration.
+5. Leave `SEED_DEMO=false` for a new deployment, then deploy. Visitors may load the UI and its read-only state and statistics without signing in. Record changes, imports, check-in actions, logout, and the OpenAI-backed assistant and memory search still require the signed-in owner session and CSRF token. Optional OpenAI settings remain server-only Render secrets and are never available to anonymous visitors.
+
+Sessions are signed and expire after eight hours; cookies are `httpOnly`, `SameSite=Lax`, and `Secure` in production. The health endpoint returns only `{ "ok": true }`; only the public snapshot and statistics APIs are available without a session.
+
+### Local authentication behavior
+
+OAuth is **disabled only when `NODE_ENV` is not `production` and every OAuth variable is absent**, preserving the existing credential-free local demo path. If any OAuth variable is set, all OAuth variables must be set or startup fails. With a complete local OAuth configuration, use an `APP_URL` such as `http://127.0.0.1:4173` and register its `/auth/callback` URL in GitHub. Production always requires HTTPS `APP_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `AUTH_SECRET`, and `ALLOWED_GITHUB_LOGIN`.
+
 ## Validation
 
-- **21 automated tests passed** during the build, covering record operations, local persistence, imports, date/cadence logic, validation, the assistant's mocked tool loop, and semantic retrieval consent, embedding validation, and source freshness. The TypeScript check and production build also passed.
+- **26 automated tests passed** during the build, covering record operations, local persistence, imports, date/cadence logic, validation, public read-only access, signed owner sessions, the assistant's mocked tool loop, and semantic retrieval consent, embedding validation, and source freshness. The TypeScript check and production build also passed.
 - **Browser checks** exercised contact creation and editing, search, conversation logging, status changes, calendar navigation, gifts, connections, reminder completion, CSV import with duplicate skipping, circle dragging with persisted changes, and the offline assistant.
 - **Live local setup:** the project author subsequently confirmed contact persistence in MongoDB Atlas and a successful AI assistant request using private credentials.
 - **Remaining coverage:** the full MongoDB integration suite requires a dedicated test URI and was not run during the build. vCard parsing has unit coverage; its separate browser upload check was interrupted by a file-chooser timeout. Generated-answer quality has not been systematically evaluated.
