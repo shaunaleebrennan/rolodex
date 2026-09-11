@@ -18,7 +18,10 @@ import {
   createOAuthState,
   createSignedValue,
   getAuthConfig,
+  hasValidCsrfToken,
+  isAuthorizedSession,
   isAllowedLogin,
+  isPublicReadOnlyApiRequest,
   sessionFromCookie,
   validOAuthState,
 } from "./auth.js";
@@ -77,11 +80,12 @@ app.get("/healthz", (_req, res) => res.json({ ok: true }));
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 app.get("/api/auth/session", (req, res) => {
   const session = sessionFromCookie(req.headers.cookie, auth);
+  const authenticated = isAuthorizedSession(session, auth);
   res.set("Cache-Control", "no-store");
   res.json({
-    authenticated: !!session,
+    authenticated,
     authEnabled: auth.enabled,
-    login: auth.enabled && session ? session.login : undefined,
+    login: auth.enabled && authenticated ? session?.login : undefined,
   });
 });
 app.get("/auth/login", (_req, res) => {
@@ -161,8 +165,19 @@ app.get("/auth/callback", async (req, res) => {
   }
 });
 app.post("/auth/logout", (req, res) => {
+  const session = sessionFromCookie(req.headers.cookie, auth);
+  if (!isAuthorizedSession(session, auth))
+    return res.status(401).json({ error: "Sign in to edit this rolodex." });
   if (req.headers["sec-fetch-site"] === "cross-site")
     return res.status(403).json({ error: "Open shauna-rolodex directly to use it." });
+  if (
+    !hasValidCsrfToken(
+      req.method,
+      req.headers["x-rolodex-token"],
+      token,
+    )
+  )
+    return res.status(403).json({ error: "Refresh shauna-rolodex and try again." });
   clearCookie(res, SESSION_COOKIE);
   clearCookie(res, OAUTH_STATE_COOKIE);
   res.status(204).end();
@@ -170,13 +185,17 @@ app.post("/auth/logout", (req, res) => {
 app.use("/api", (req, res, next) => {
   res.set("Cache-Control", "no-store");
   res.set("X-Content-Type-Options", "nosniff");
+  if (isPublicReadOnlyApiRequest(req.method, req.path)) return next();
   if (req.headers["sec-fetch-site"] === "cross-site")
     return res.status(403).json({ error: "Open shauna-rolodex directly to use it." });
-  if (!sessionFromCookie(req.headers.cookie, auth))
-    return res.status(401).json({ error: "Sign in to access your rolodex." });
+  if (!isAuthorizedSession(sessionFromCookie(req.headers.cookie, auth), auth))
+    return res.status(401).json({ error: "Sign in to edit this rolodex." });
   if (
-    !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
-    req.headers["x-rolodex-token"] !== token
+    !hasValidCsrfToken(
+      req.method,
+      req.headers["x-rolodex-token"],
+      token,
+    )
   )
     return res.status(403).json({ error: "Refresh shauna-rolodex and try again." });
   next();
@@ -197,14 +216,18 @@ try {
   );
   process.exit(1);
 }
-app.get("/api/state", async (_req, res) =>
+app.get("/api/state", async (req, res) => {
+  const authenticated = isAuthorizedSession(
+    sessionFromCookie(req.headers.cookie, auth),
+    auth,
+  );
   res.json({
     data: await store.snapshot(),
     mode: store.mode,
-    aiEnabled: !!process.env.OPENAI_API_KEY,
-    token,
-  }),
-);
+    aiEnabled: authenticated && !!process.env.OPENAI_API_KEY,
+    ...(authenticated ? { token } : {}),
+  });
+});
 app.get("/api/stats", async (_req, res) =>
   res.json(await store.monthlyInteractions()),
 );

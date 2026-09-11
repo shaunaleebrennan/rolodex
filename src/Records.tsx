@@ -387,7 +387,7 @@ export function Timeline({
 }: {
   data: Snapshot;
   onOpen: (id: string) => void;
-  onEdit: (editor: Editor) => void;
+  onEdit?: (editor: Editor) => void;
 }) {
   const [person, setPerson] = useState(""),
     [type, setType] = useState("");
@@ -441,6 +441,7 @@ export function Timeline({
 export function PersonRecords({
   person,
   data,
+  canEdit,
   onEdit,
   onOpen,
   onSaved,
@@ -449,6 +450,7 @@ export function PersonRecords({
 }: {
   person: Person;
   data: Snapshot;
+  canEdit: boolean;
   onEdit: (editor: Editor) => void;
   onOpen: (id: string) => void;
   onSaved: () => Promise<void>;
@@ -461,7 +463,8 @@ export function PersonRecords({
     null,
   );
   const add = (kind: Editor["kind"]) => onEdit({ kind, personId: person.id });
-  const controls = (kind: Editor["kind"], r: any) => (
+  const controls = (kind: Editor["kind"], r: any) =>
+    canEdit && (
     <div className="row-actions">
       <button
         className="icon"
@@ -478,7 +481,7 @@ export function PersonRecords({
         <Trash2 size={14} />
       </button>
     </div>
-  );
+    );
   const dates = own("dates");
   const near = upcoming(data).filter((d) => d.personId === person.id);
   const latest = own("news").sort((a, b) => b.date.localeCompare(a.date))[0];
@@ -492,16 +495,18 @@ export function PersonRecords({
   }
   return (
     <div className="person-records">
-      <div className="detail-actions">
-        <button className="primary" onClick={() => add("interactions")}>
-          <Plus size={17} />
-          Log interaction
-        </button>
-        <button className="secondary" onClick={() => onAsk(person.id)}>
-          <Sparkles size={17} />
-          Plan a catch-up
-        </button>
-      </div>
+      {canEdit && (
+        <div className="detail-actions">
+          <button className="primary" onClick={() => add("interactions")}>
+            <Plus size={17} />
+            Log interaction
+          </button>
+          <button className="secondary" onClick={() => onAsk(person.id)}>
+            <Sparkles size={17} />
+            Plan a catch-up
+          </button>
+        </div>
+      )}
       {latest && (
         <section className="latest-news">
           <Newspaper size={21} />
@@ -514,7 +519,7 @@ export function PersonRecords({
         </section>
       )}
       <div className="records-grid">
-        <Section title="Worth remembering" action={() => add("facts")}>
+        <Section title="Worth remembering" action={canEdit ? () => add("facts") : undefined}>
           {own("facts").map((r) => (
             <div className="record-line" key={r.id}>
               <p>{r.text}</p>
@@ -527,7 +532,7 @@ export function PersonRecords({
             </Empty>
           )}
         </Section>
-        <Section title="Reminders" action={() => add("reminders")}>
+        <Section title="Reminders" action={canEdit ? () => add("reminders") : undefined}>
           {own("reminders")
             .sort((a, b) => a.date.localeCompare(b.date))
             .map((r) => (
@@ -536,6 +541,7 @@ export function PersonRecords({
                   <input
                     type="checkbox"
                     checked={r.done}
+                    disabled={!canEdit}
                     onChange={() =>
                       update("reminders", { ...r, done: !r.done })
                     }
@@ -552,7 +558,7 @@ export function PersonRecords({
             <Empty>Nothing to follow up on just yet.</Empty>
           )}
         </Section>
-        <Section title="Important dates" action={() => add("dates")}>
+        <Section title="Important dates" action={canEdit ? () => add("dates") : undefined}>
           {dates.map((d) => {
             const when = nextDate(d);
             const age = currentAge(d);
@@ -587,7 +593,7 @@ export function PersonRecords({
             <Empty>Add a birthday or another date worth celebrating.</Empty>
           )}
         </Section>
-        <Section title="Gift list" action={() => add("gifts")}>
+        <Section title="Gift list" action={canEdit ? () => add("gifts") : undefined}>
           {near.length > 0 && own("gifts").some((g) => g.status === "idea") && (
             <p className="gift-nudge">
               <Gift size={16} />
@@ -601,7 +607,7 @@ export function PersonRecords({
                 <small>
                   {g.status} {g.occasion ? "· " + g.occasion : ""}
                 </small>
-                {g.status === "idea" && (
+                {canEdit && g.status === "idea" && (
                   <button
                     className="text-button"
                     onClick={() =>
@@ -619,7 +625,7 @@ export function PersonRecords({
             <Empty>A good idea now. A thoughtful gift later.</Empty>
           )}
         </Section>
-        <Section title="Connections" action={() => add("connections")}>
+        <Section title="Connections" action={canEdit ? () => add("connections") : undefined}>
           {data.connections
             .filter((c) => c.personId === person.id || c.otherId === person.id)
             .map((c) => {
@@ -639,15 +645,17 @@ export function PersonRecords({
                       <small>{connectionText(c, person.id)}</small>
                     </span>
                   </button>
-                  <button
-                    className="icon"
-                    aria-label={"Remove connection to " + other.name}
-                    onClick={() =>
-                      setDeleting({ kind: "connections", id: c.id })
-                    }
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {canEdit && (
+                    <button
+                      className="icon"
+                      aria-label={"Remove connection to " + other.name}
+                      onClick={() =>
+                        setDeleting({ kind: "connections", id: c.id })
+                      }
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               ) : null;
             })}
@@ -655,7 +663,7 @@ export function PersonRecords({
             (c) => c.personId === person.id || c.otherId === person.id,
           ) && <Empty>Connect the people who know each other.</Empty>}
         </Section>
-        <Section title="Life updates" action={() => add("news")}>
+        <Section title="Life updates" action={canEdit ? () => add("news") : undefined}>
           {own("news")
             .sort((a, b) => b.date.localeCompare(a.date))
             .map((r) => (
@@ -674,12 +682,15 @@ export function PersonRecords({
           )}
         </Section>
       </div>
-      <Section title="Your timeline" action={() => add("interactions")}>
+      <Section
+        title="Your timeline"
+        action={canEdit ? () => add("interactions") : undefined}
+      >
         <Feed
           data={data}
           personId={person.id}
           onOpen={onOpen}
-          onEdit={onEdit}
+          onEdit={canEdit ? onEdit : undefined}
         />
       </Section>
       {deleting && (

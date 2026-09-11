@@ -73,7 +73,7 @@ export default function App() {
     getAuthSession()
       .then(async (session) => {
         setAuth(session);
-        if (session.authenticated) await refresh();
+        await refresh();
       })
       .catch((e) => {
         setError(e.message);
@@ -95,39 +95,8 @@ export default function App() {
     setView("People");
   };
   const person = state.data.people.find((p) => p.id === selected);
+  const canEdit = auth?.authenticated === true;
   if (!auth) return <div className="login-screen">Checking sign-in status…</div>;
-  if (!auth.authenticated)
-    return (
-      <main className="login-screen">
-        <div className="login-card">
-          <span className="brand-icon">
-            <BookOpen size={25} />
-          </span>
-          <p className="eyebrow">PRIVATE WORKSPACE</p>
-          <h1>shauna-rolodex</h1>
-          <p>
-            Your relationship history stays private. Sign in with the approved
-            GitHub account to continue.
-          </p>
-          {auth.authEnabled ? (
-            <a className="primary login-button" href="/auth/login">
-              Sign in with GitHub
-            </a>
-          ) : (
-            <p className="muted">
-              Authentication is disabled for this local development server.
-            </p>
-          )}
-          {new URLSearchParams(window.location.search).get("auth") ===
-            "failed" && (
-            <p role="alert" className="error">
-              Sign-in did not complete. Please try again.
-            </p>
-          )}
-          {error && <p role="alert" className="error">{error}</p>}
-        </div>
-      </main>
-    );
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -145,7 +114,9 @@ export default function App() {
           </span>
           shauna-rolodex<span className="brand-dot">.</span>
         </a>
-        <p className="nav-label">YOUR SPACE</p>
+        <p className="nav-label">
+          {canEdit ? "YOUR SPACE" : "PUBLIC DEMO · READ ONLY"}
+        </p>
         <nav aria-label="Main navigation">
           {nav.map(([n, Icon]) => (
             <button
@@ -162,10 +133,12 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <button className="assistant-nav" onClick={() => setAssistant({})}>
-          <Sparkles size={19} />
-          Relationship assistant
-        </button>
+        {canEdit && (
+          <button className="assistant-nav" onClick={() => setAssistant({})}>
+            <Sparkles size={19} />
+            Relationship assistant
+          </button>
+        )}
         <div className="sidebar-bottom">
           <button className="storage-status" onClick={() => setSetup(true)}>
             <Database size={16} />
@@ -181,7 +154,12 @@ export default function App() {
           <div className="profile">
             <span className="profile-avatar">ME</span>
             <span>
-              My shauna-rolodex<small>A little closer, every day</small>
+              {canEdit ? "My shauna-rolodex" : "Public demo"}
+              <small>
+                {canEdit
+                  ? "A little closer, every day"
+                  : "Viewing only · sign in to edit"}
+              </small>
             </span>
           </div>
         </div>
@@ -192,11 +170,18 @@ export default function App() {
             My workspace <span className="separator">/</span>{" "}
             <strong>{person ? person.name : view}</strong>
           </span>
-          <button className="text-button" onClick={() => setEditing(null)}>
-            <Plus size={17} />
-            Add person
-          </button>
-          {auth.authEnabled && (
+          <div className="topbar-actions">
+            {canEdit ? (
+              <button className="text-button" onClick={() => setEditing(null)}>
+                <Plus size={17} />
+                Add person
+              </button>
+            ) : auth.authEnabled ? (
+              <a className="text-button" href="/auth/login">
+                Sign in to edit
+              </a>
+            ) : null}
+            {canEdit && auth.authEnabled && (
             <button
               className="text-button"
               onClick={() =>
@@ -210,9 +195,24 @@ export default function App() {
             >
               Sign out
             </button>
-          )}
+            )}
+          </div>
         </header>
         <main>
+          {!canEdit && (
+            <div className="public-notice" role="status">
+              <strong>Public demo · read-only.</strong> Browse the sample
+              relationship history.{" "}
+              {auth.authEnabled && <a href="/auth/login">Sign in to edit.</a>}
+            </div>
+          )}
+          {!canEdit &&
+            new URLSearchParams(window.location.search).get("auth") ===
+              "failed" && (
+              <p role="alert" className="error">
+                Sign-in did not complete. Please try again.
+              </p>
+            )}
           {error && (
             <div role="alert" className="error">
               {error}
@@ -242,33 +242,38 @@ export default function App() {
                   <PersonBasics person={person} />
                   <div className="rhythm-summary">
                     <Status person={person} data={state.data} />
-                    <button
-                      className="text-button"
-                      onClick={() => setRhythm(person)}
-                    >
-                      Edit check-in rhythm
-                    </button>
+                    {canEdit && (
+                      <button
+                        className="text-button"
+                        onClick={() => setRhythm(person)}
+                      >
+                        Edit check-in rhythm
+                      </button>
+                    )}
                   </div>
-                  <div className="actions">
-                    <button
-                      className="secondary"
-                      onClick={() => setEditing(person)}
-                    >
-                      <Pencil size={16} />
-                      Edit person
-                    </button>
-                    <button
-                      className="icon"
-                      aria-label="Delete person"
-                      onClick={() => setRemoving(person)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+                  {canEdit && (
+                    <div className="actions">
+                      <button
+                        className="secondary"
+                        onClick={() => setEditing(person)}
+                      >
+                        <Pencil size={16} />
+                        Edit person
+                      </button>
+                      <button
+                        className="icon"
+                        aria-label="Delete person"
+                        onClick={() => setRemoving(person)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  )}
                 </section>
                 <PersonRecords
                   person={person}
                   data={state.data}
+                  canEdit={canEdit}
                   onEdit={setEditor}
                   onOpen={open}
                   onSaved={saved}
@@ -280,6 +285,7 @@ export default function App() {
           ) : view === "Today" ? (
             <Today
               data={state.data}
+              canEdit={canEdit}
               onOpen={open}
               onEdit={setEditor}
               onAsk={(id) => setAssistant({ personId: id })}
@@ -290,10 +296,15 @@ export default function App() {
           ) : view === "Calendar" ? (
             <Calendar data={state.data} onOpen={open} />
           ) : view === "Timeline" ? (
-            <Timeline data={state.data} onOpen={open} onEdit={setEditor} />
+            <Timeline
+              data={state.data}
+              onOpen={open}
+              onEdit={canEdit ? setEditor : undefined}
+            />
           ) : view === "Circles" ? (
             <Circles
               data={state.data}
+              canEdit={canEdit}
               onOpen={open}
               onSaved={saved}
               onError={setError}
@@ -301,6 +312,7 @@ export default function App() {
           ) : view === "People" ? (
             <People
               data={state.data}
+              canEdit={canEdit}
               onOpen={open}
               onAdd={() => setEditing(null)}
               onEdit={setEditing}
@@ -341,7 +353,7 @@ export default function App() {
           )}
         </main>
       </div>
-      {assistant && (
+      {canEdit && assistant && (
         <Assistant
           data={state.data}
           personId={assistant.personId}
@@ -351,7 +363,7 @@ export default function App() {
           onEdit={setEditor}
         />
       )}
-      {editor && (
+      {canEdit && editor && (
         <RecordForm
           editor={editor}
           data={state.data}
@@ -359,28 +371,28 @@ export default function App() {
           onSaved={saved}
         />
       )}
-      {rhythm && (
+      {canEdit && rhythm && (
         <CadenceForm
           person={rhythm}
           onClose={() => setRhythm(null)}
           onSaved={saved}
         />
       )}
-      {editing !== undefined && (
+      {canEdit && editing !== undefined && (
         <PersonForm
           person={editing || undefined}
           onClose={() => setEditing(undefined)}
           onSaved={saved}
         />
       )}
-      {importing && (
+      {canEdit && importing && (
         <ImportContacts
           data={state.data}
           onClose={() => setImporting(false)}
           onSaved={saved}
         />
       )}
-      {removing && (
+      {canEdit && removing && (
         <Modal
           title={"Delete " + removing.name + "?"}
           onClose={() => setRemoving(null)}

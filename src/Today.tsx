@@ -31,6 +31,7 @@ import { Feed, type Editor } from "./Records";
 import { saveRecord } from "./api";
 export default function Today({
   data,
+  canEdit,
   onOpen,
   onEdit,
   onAsk,
@@ -39,6 +40,7 @@ export default function Today({
   onError,
 }: {
   data: Snapshot;
+  canEdit: boolean;
   onOpen: (id: string) => void;
   onEdit: (e: Editor) => void;
   onAsk: (id?: string) => void;
@@ -77,10 +79,12 @@ export default function Today({
           <h1>A little closer, every day.</h1>
           <p>Your people. A few thoughtful ways to show up for them.</p>
         </div>
-        <button className="secondary assistant-button" onClick={() => onAsk()}>
-          <Sparkles size={17} />
-          Help me reconnect
-        </button>
+        {canEdit && (
+          <button className="secondary assistant-button" onClick={() => onAsk()}>
+            <Sparkles size={17} />
+            Help me reconnect
+          </button>
+        )}
       </div>
       <div className="stats-row">
         <div className="stat">
@@ -162,25 +166,27 @@ export default function Today({
                       ? `Your last catch-up was ${format(parseISO(lead.last), "d MMMM")}. A simple hello is a good place to start.`
                       : "You haven’t logged a conversation yet. Start with a hello.")}
                 </p>
-                <div className="featured-actions">
-                  <button
-                    className="primary"
-                    onClick={() =>
-                      onEdit({ kind: "interactions", personId: lead.person.id })
-                    }
-                  >
-                    <Plus size={16} />
-                    Log a catch-up
-                  </button>
-                  <button
-                    className="text-button"
-                    onClick={() => onAsk(lead.person.id)}
-                  >
-                    <Sparkles size={15} />
-                    Help me find the words
-                    <ArrowRight size={15} />
-                  </button>
-                </div>
+                {canEdit && (
+                  <div className="featured-actions">
+                    <button
+                      className="primary"
+                      onClick={() =>
+                        onEdit({ kind: "interactions", personId: lead.person.id })
+                      }
+                    >
+                      <Plus size={16} />
+                      Log a catch-up
+                    </button>
+                    <button
+                      className="text-button"
+                      onClick={() => onAsk(lead.person.id)}
+                    >
+                      <Sparkles size={15} />
+                      Help me find the words
+                      <ArrowRight size={15} />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
             {due.slice(1, all ? undefined : 5).map((d) => (
@@ -198,15 +204,17 @@ export default function Today({
                   </span>
                 </button>
                 <Status person={d.person} data={data} />
-                <button
-                  className="icon log-icon"
-                  aria-label={"Log interaction with " + d.person.name}
-                  onClick={() =>
-                    onEdit({ kind: "interactions", personId: d.person.id })
-                  }
-                >
-                  <MessageCircle size={18} />
-                </button>
+                {canEdit && (
+                  <button
+                    className="icon log-icon"
+                    aria-label={"Log interaction with " + d.person.name}
+                    onClick={() =>
+                      onEdit({ kind: "interactions", personId: d.person.id })
+                    }
+                  >
+                    <MessageCircle size={18} />
+                  </button>
+                )}
               </div>
             ))}
             {due.length > 5 && (
@@ -383,13 +391,15 @@ export default function Today({
             </header>
             {reminders.map((r) => (
               <div className="reminder-row" key={r.id}>
-                <button
-                  className="reminder-check"
-                  aria-label={"Complete " + r.text}
-                  onClick={() => complete(r)}
-                >
-                  <Check size={14} />
-                </button>
+                {canEdit && (
+                  <button
+                    className="reminder-check"
+                    aria-label={"Complete " + r.text}
+                    onClick={() => complete(r)}
+                  >
+                    <Check size={14} />
+                  </button>
+                )}
                 <div>
                   <p>{r.text}</p>
                   <button

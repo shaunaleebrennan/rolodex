@@ -37,7 +37,7 @@ export async function getState(): Promise<{
   aiEnabled: boolean;
 }> {
   const data = await request("/api/state");
-  token = data.token;
+  token = typeof data.token === "string" ? data.token : "";
   return data;
 }
 export const saveRecord = <K extends Kind>(

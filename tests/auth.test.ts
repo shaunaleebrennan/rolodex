@@ -7,7 +7,10 @@ import {
   cookieOptions,
   createSignedValue,
   getAuthConfig,
+  hasValidCsrfToken,
+  isAuthorizedSession,
   isAllowedLogin,
+  isPublicReadOnlyApiRequest,
   sessionFromCookie,
   validOAuthState,
 } from "../server/auth.js";
@@ -53,6 +56,28 @@ test("access is limited to the configured GitHub login", () => {
   assert.equal(isAllowedLogin("ShaunaLeeBrennan", config.allowedLogin), true);
   assert.equal(isAllowedLogin("another-user", config.allowedLogin), false);
   assert.equal(isAllowedLogin(undefined, config.allowedLogin), false);
+  assert.equal(
+    isAuthorizedSession(
+      { login: "shaunaleebrennan", expiresAt: 10_000 },
+      config,
+    ),
+    true,
+  );
+  assert.equal(
+    isAuthorizedSession({ login: "another-user", expiresAt: 10_000 }, config),
+    false,
+  );
+});
+
+test("only snapshots and statistics are public read-only API requests", () => {
+  assert.equal(isPublicReadOnlyApiRequest("GET", "/state"), true);
+  assert.equal(isPublicReadOnlyApiRequest("HEAD", "/stats"), true);
+  assert.equal(isPublicReadOnlyApiRequest("POST", "/state"), false);
+  assert.equal(isPublicReadOnlyApiRequest("GET", "/assistant"), false);
+  assert.equal(hasValidCsrfToken("GET", undefined, "csrf-token"), true);
+  assert.equal(hasValidCsrfToken("POST", "csrf-token", "csrf-token"), true);
+  assert.equal(hasValidCsrfToken("POST", undefined, "csrf-token"), false);
+  assert.equal(hasValidCsrfToken("POST", "wrong-token", "csrf-token"), false);
 });
 
 test("production requires complete HTTPS OAuth configuration", () => {

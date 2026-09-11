@@ -106,6 +106,32 @@ export function isAllowedLogin(login: unknown, allowedLogin: string) {
   );
 }
 
+export function isAuthorizedSession(session: Session | null, config: AuthConfig) {
+  return (
+    !!session &&
+    (!config.enabled || isAllowedLogin(session.login, config.allowedLogin))
+  );
+}
+
+export function isPublicReadOnlyApiRequest(method: string, path: string) {
+  return (
+    ["GET", "HEAD"].includes(method) &&
+    (path === "/state" || path === "/stats")
+  );
+}
+
+export function hasValidCsrfToken(
+  method: string,
+  suppliedToken: string | string[] | undefined,
+  expectedToken: string,
+) {
+  return (
+    ["GET", "HEAD", "OPTIONS"].includes(method) ||
+    (typeof suppliedToken === "string" &&
+      constantTimeEqual(suppliedToken, expectedToken))
+  );
+}
+
 export function createOAuthState(now = Date.now()): OAuthState {
   return {
     value: randomBytes(32).toString("base64url"),

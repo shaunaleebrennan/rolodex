@@ -187,6 +187,7 @@ export function PersonForm({
 }
 export function People({
   data,
+  canEdit,
   onOpen,
   onAdd,
   onEdit,
@@ -194,6 +195,7 @@ export function People({
   onImport,
 }: {
   data: Snapshot;
+  canEdit: boolean;
   onOpen: (id: string) => void;
   onAdd: () => void;
   onEdit: (p: Person) => void;
@@ -260,7 +262,9 @@ export function People({
         </span>
       ),
     },
-    {
+  ];
+  if (canEdit)
+    columns.push({
       id: "actions",
       header: "",
       cell: ({ row: { original: p } }) => (
@@ -281,8 +285,7 @@ export function People({
           </button>
         </div>
       ),
-    },
-  ];
+    });
   const table = useReactTable({
     data: filtered,
     columns,
@@ -298,16 +301,18 @@ export function People({
           </h1>
           <p>All the people who make your world a little bigger.</p>
         </div>
-        <div className="actions">
-          <button className="secondary" onClick={onImport}>
-            <Upload size={17} />
-            Import contacts
-          </button>
-          <button className="primary" onClick={onAdd}>
-            <Plus size={18} />
-            Add person
-          </button>
-        </div>
+        {canEdit && (
+          <div className="actions">
+            <button className="secondary" onClick={onImport}>
+              <Upload size={17} />
+              Import contacts
+            </button>
+            <button className="primary" onClick={onAdd}>
+              <Plus size={18} />
+              Add person
+            </button>
+          </div>
+        )}
       </div>
       <div className="toolbar">
         <label className="search">

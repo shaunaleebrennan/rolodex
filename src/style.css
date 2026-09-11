@@ -267,6 +267,28 @@ nav {
 .topbar .text-button {
   font-size: 0.85rem;
 }
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.public-notice {
+  display: flex;
+  gap: 5px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin: 0 0 24px;
+  padding: 12px 15px;
+  background: #fff5d8;
+  border: 1px solid #f0d98d;
+  border-radius: 9px;
+  color: #5b4925;
+  font-size: 0.86rem;
+}
+.public-notice a {
+  color: #6e5515;
+  font-weight: 600;
+}
 main {
   padding: 36px 40px 55px;
   max-width: 1660px;

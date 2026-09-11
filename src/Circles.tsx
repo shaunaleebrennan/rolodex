@@ -43,16 +43,19 @@ export function Status({ person, data }: { person: Person; data: Snapshot }) {
 function Card({
   person,
   data,
+  canEdit,
   onOpen,
   onMove,
 }: {
   person: Person;
   data: Snapshot;
+  canEdit: boolean;
   onOpen: (id: string) => void;
   onMove: (p: Person, c: Circle) => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: person.id,
+    disabled: !canEdit,
   });
   const c = checkIn(person, data.interactions);
   return (
@@ -62,14 +65,16 @@ function Card({
     >
       <div className="card-person">
         <Avatar person={person} />
-        <button
-          className="icon drag-handle"
-          {...listeners}
-          {...attributes}
-          aria-label={"Drag " + person.name}
-        >
-          <GripVertical size={17} />
-        </button>
+        {canEdit && (
+          <button
+            className="icon drag-handle"
+            {...listeners}
+            {...attributes}
+            aria-label={"Drag " + person.name}
+          >
+            <GripVertical size={17} />
+          </button>
+        )}
       </div>
       <button className="card-name" onClick={() => onOpen(person.id)}>
         {person.name}
@@ -80,27 +85,31 @@ function Card({
         <Clock3 size={13} />
         {c.last ? "Last spoke " + c.last : "No interactions yet"}
       </small>
-      <select
-        className="move-select"
-        aria-label={"Move " + person.name + " to circle"}
-        value={person.circle}
-        onChange={(e) => onMove(person, e.target.value as Circle)}
-      >
-        {circles.map((c) => (
-          <option key={c}>{c}</option>
-        ))}
-      </select>
+      {canEdit && (
+        <select
+          className="move-select"
+          aria-label={"Move " + person.name + " to circle"}
+          value={person.circle}
+          onChange={(e) => onMove(person, e.target.value as Circle)}
+        >
+          {circles.map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+        </select>
+      )}
     </article>
   );
 }
 function Column({
   circle,
   data,
+  canEdit,
   onOpen,
   onMove,
 }: {
   circle: Circle;
   data: Snapshot;
+  canEdit: boolean;
   onOpen: (id: string) => void;
   onMove: (p: Person, c: Circle) => void;
 }) {
@@ -134,12 +143,17 @@ function Column({
             key={p.id}
             person={p}
             data={data}
+            canEdit={canEdit}
             onOpen={onOpen}
             onMove={onMove}
           />
         ))}
         {!people.length && (
-          <Empty>Drop someone here to grow this circle.</Empty>
+          <Empty>
+            {canEdit
+              ? "Drop someone here to grow this circle."
+              : "No one is in this circle."}
+          </Empty>
         )}
       </div>
     </section>
@@ -147,11 +161,13 @@ function Column({
 }
 export default function Circles({
   data,
+  canEdit,
   onOpen,
   onSaved,
   onError,
 }: {
   data: Snapshot;
+  canEdit: boolean;
   onOpen: (id: string) => void;
   onSaved: () => Promise<void>;
   onError: (e: string) => void;
@@ -171,6 +187,7 @@ export default function Circles({
   }
   function end(e: DragEndEvent) {
     setActive(null);
+    if (!canEdit) return;
     const p = data.people.find((p) => p.id === e.active.id);
     if (p && e.over && circles.includes(e.over.id as Circle))
       void move(p, e.over.id as Circle);
@@ -182,7 +199,9 @@ export default function Circles({
           <p className="eyebrow">MAKE ROOM FOR WHAT MATTERS</p>
           <h1>Keep your circles close.</h1>
           <p>
-            Drag people between circles to set your rhythm for keeping in touch.
+            {canEdit
+              ? "Drag people between circles to set your rhythm for keeping in touch."
+              : "Browse the relationship groups in this public read-only demo."}
           </p>
         </div>
       </div>
@@ -201,6 +220,7 @@ export default function Circles({
               key={c}
               circle={c}
               data={data}
+              canEdit={canEdit}
               onOpen={onOpen}
               onMove={move}
             />
