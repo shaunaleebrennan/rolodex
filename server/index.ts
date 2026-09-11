@@ -28,6 +28,33 @@ const auth = getAuthConfig();
 const app = express();
 app.disable("x-powered-by");
 const token = randomBytes(32).toString("hex");
+
+function databaseFailureCode(error: unknown) {
+  const codes: string[] = [];
+  const names: string[] = [];
+  let current = error;
+  for (let depth = 0; depth < 3 && current && typeof current === "object"; depth++) {
+    const detail = current as {
+      code?: unknown;
+      name?: unknown;
+      cause?: unknown;
+    };
+    if (typeof detail.code === "string" || typeof detail.code === "number")
+      codes.push(String(detail.code));
+    if (typeof detail.name === "string") names.push(detail.name);
+    current = detail.cause;
+  }
+  if (codes.includes("18")) return "AUTHENTICATION_18";
+  if (codes.includes("ENOTFOUND")) return "DNS_ENOTFOUND";
+  if (codes.some((code) => /TIMEOUT|ETIMEDOUT/.test(code)))
+    return "NETWORK_TIMEOUT";
+  if (codes.includes("ECONNREFUSED")) return "NETWORK_REFUSED";
+  if (names.includes("MongoParseError")) return "URI_PARSE";
+  if (names.includes("MongoServerSelectionError"))
+    return "SERVER_SELECTION_TIMEOUT";
+  return "CONNECTION_FAILED";
+}
+
 app.use((_req, res, next) => {
   res.set("Referrer-Policy", "no-referrer");
   res.set("X-Content-Type-Options", "nosniff");
@@ -164,9 +191,9 @@ try {
     if (process.env.SEED_DEMO !== "false") await seed(store);
     await store.markInitialized();
   }
-} catch {
+} catch (error) {
   console.error(
-    "Database connection failed. Check your MongoDB URI, database user, and Atlas network access. No credentials have been logged.",
+    `Database connection failed (${databaseFailureCode(error)}). Check your MongoDB URI, database user, and Atlas network access. No credentials have been logged.`,
   );
   process.exit(1);
 }
